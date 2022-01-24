@@ -3,7 +3,7 @@
 String formatting module written in Jai.
 
 # Dependencies
-Fmt depends on my port of [Ryū: Fast float to string conversion](https://github.com/ostef/jai-ryu). The to_shortest and string to float conversions are not imported.
+Fmt depends on my port of [Ryū: Fast float to string conversion](https://github.com/ostef/jai-ryu). The to_shortest and string to float conversions are not imported. Ryu is the only module that gets imported by Fmt.
 
 # Usage
 Fmt supports arbitrary arguments by using `%` to specify an argument slot.
