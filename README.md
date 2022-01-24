@@ -11,7 +11,7 @@ When using `%`, the type of the result will be retrieved from the type informati
 It also supports more complex formatting options using curly braces.
 This is the format of the formatting options:  
 `{[arg_index][:[flags][width][.precision]specifier]}`  
-Empty format `{}` is the same as `%`.
+If `:` is not specified, type information is used to decide what to print. The argument index is optional, meaning an empty format `{}` is the same as `%`.
 
 ## Valid flags are:
 * <: right justify. Ignored if width is not set. This is the default,
