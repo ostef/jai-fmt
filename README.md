@@ -39,7 +39,7 @@ Positive or negative integer values, or a * character to retrieve the precision 
 * `d`: same as above,
 * `x`: print 64-bit unsigned integer in lowercase hexadecimal,
 * `X`: print 64-bit unsigned integer in uppercase hexadecimal,
-* `p`: print pointer as hexadecimal unsigned 64-bit integer, same as %#x,
+* `p`: print pointer as hexadecimal unsigned 64-bit integer, same as `#x`,
 * `f`: print 64-bit floating point number in fixed form (uses Ryu d2fixed conversion),
 * `e`: print 64-bit floating point number in lowercase exponent form (uses Ryu d2exp conversion),
 * `E`: print 64-bit floating point number in uppercase exponent form (uses Ryu d2exp conversion),
