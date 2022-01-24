@@ -1,6 +1,6 @@
 #scope_module
 
-// This was originally in a separate module, but we want Fmt to be a standalone thing.
+// This was originally in a separate module, but we want Fmt to be as independant as possible.
 
  S8_MIN :  s8 :                       -128;
  S8_MAX :  s8 :                        127;

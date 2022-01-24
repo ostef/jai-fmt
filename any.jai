@@ -1,6 +1,6 @@
 #scope_module
 
-// This was originally in a separate module, but we want Fmt to be a standalone thing.
+// This was originally in a separate module, but we want Fmt to be as independant as possible.
 
 relative_to_absolute_ptr :: inline (ptr : *void, size : s64) -> *void #must
 {
