@@ -62,15 +62,6 @@ Valid matrix types are integers, floats, fixed size arrays of valid vector types
 * If the argument cannot be converted to the specifier type, the default value is printed (0 for integer and float types, empty string for strings),
 * For `v` and `m` specifiers, if the type of the argument is not a valid vector or matrix type, '(not a vector type)' or '(not a matrix type)' is printed. This is not consistent with other specifiers, so this might change in the future.
 
-Fmt accepts a polymorphic buffer as argument.
-This makes it possible, for example, to directly print the characters to the desired output instead of allocating a temporary buffer and writing to it (see `print.jai`).
-This also allows the user to use a dynamically growing buffer instead of computing the final length of the string by calling `format_buffered` with a null buffer and then allocating a buffer of sufficient size like in the `format` procedure.
-The buffer type `T` has to be a struct that have at least one procedure inside with the following name and signature:
-```jai
-	write_byte :: (*T, u8)
-```
-The rules of polymorphism allow `write_byte` to not be constant (not tested).
-
 These are the main procedures:
 ```jai
 fmt_buffered :: format_buffered;
@@ -92,3 +83,18 @@ print :: inline (value : $T) -> length : s64
 ```jai
 println :: inline (value : $T) -> length : s64
 ```
+
+# Extensibility
+`format_buffered` accepts a polymorphic buffer as argument.
+This makes it possible, for example, to directly print the characters to the desired output instead of allocating a temporary buffer and writing to it (see printing functions in `print.jai`).
+This also allows the user to use a dynamically growing buffer instead of computing the final length of the string by calling `format_buffered` with a null buffer and then allocating a buffer of sufficient size like in the `format` procedure.
+The buffer type `T` has to be a struct that have at least one procedure inside with the following name and signature:
+```jai
+write_byte :: (buffer : *T, byte : u8)
+```
+The rules of polymorphism allow `write_byte` to not be constant (not tested).  
+It is valid to call `write_byte` with a null `buffer`, in which case calling `write_byte` should be a no-op.
+
+# Additional formatting options
+* `@Fmt_Newline` note on struct members: if not nested, a newline will be printed after the member on which this note is on is printed.
+An example of printing a nested struct member might be when printing an array of a struct type. When this is the case, `@Fmt_Newline` is ignored.
