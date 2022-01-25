@@ -2,7 +2,7 @@
 
 // This was originally in a separate module, but we want Fmt to be as independant as possible.
 
-is_subclass_of :: (info : *Type_Info, of : *Type_Info_Struct, nested := false) -> bool #must
+is_substruct_of :: (info : *Type_Info, of : *Type_Info_Struct, nested := false) -> bool #must
 {
 	if info.type != .STRUCT
 		return false;
@@ -27,7 +27,7 @@ is_subclass_of :: (info : *Type_Info, of : *Type_Info_Struct, nested := false) -
 		{
 			info_pointer := cast (*Type_Info_Pointer) member.type;
 
-			return is_subclass_of (info_pointer.pointer_to, of, true);
+			return is_substruct_of (info_pointer.pointer_to, of, true);
 		}
 		break;
 	}

@@ -192,7 +192,7 @@ write_relative_pointer_size :: inline (buffer : *$T, size : s64) -> length : s64
 write_type :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 {
 	info := arg.value.type;
-	if info.type == .TYPE || info.type == .POINTER && is_subclass_of ((cast (*Type_Info_Pointer) info).pointer_to, type_info (Type_Info))
+	if info.type == .TYPE || info.type == .POINTER && is_substruct_of ((cast (*Type_Info_Pointer) info).pointer_to, type_info (Type_Info))
 		return write_type (buffer, <<cast (**Type_Info) arg.value.value_pointer);
 	return write_string (buffer, "(not a type)");
 }
