@@ -79,10 +79,16 @@ advance :: inline (val : string, count := 1) -> string #must
 	return result;
 }
 
-flagged :: inline (val : $T, flag : T) -> bool #must
-	#no_context
+flagged :: (val : $T, flag : T) -> bool #must
+	#expand
 {
 	return (val & flag) == flag;
+}
+
+remove_flag :: (val : $T, flag : T) -> T #must
+	#expand
+{
+	return val & ~flag;
 }
 
 string_to_u64 :: inline (str : string) -> value : u64 #must, bytes_read : s64

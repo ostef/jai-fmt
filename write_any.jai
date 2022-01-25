@@ -36,7 +36,7 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 		info_integer := cast (*Type_Info_Integer) info_enum.internal_type;
 		enum_value := any_to_s64 (any.value_pointer, info_integer);
 
-		if info_enum.enum_type_flags & .FLAGS
+		if flagged (info_enum.enum_type_flags, .FLAGS)
 		{
 			flags_value := cast (u64) enum_value;
 			flags_printed : u64;
@@ -44,19 +44,16 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 			for info_enum.values
 			{
 				value := cast (u64) it;
-				flag := flags_value & value;
-				if flag != value then flag = 0;
-				if flag == 0 then continue;
-				if !(flag & ~flags_printed) then continue;
-				flags_printed |= flag;
-
+				if !flagged (flags_value, value) || flagged (flags_printed, value)
+					continue;
+				flags_printed |= value;
 				if !first
 					index += write_string (buffer, " | ");
 				index += write_string (buffer, info_enum.names[it_index]);
 				first = false;
 			}
 
-			out_of_range := flags_value & ~flags_printed;
+			out_of_range := remove_flag (flags_value, flags_printed);
 			if out_of_range != 0 || first
 			{
 				if !first
@@ -67,17 +64,7 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 		}
 		else
 		{
-			name_index := -1;
-			for info_enum.values
-			{
-				if it == enum_value
-				{
-					name_index = it_index;
-
-					break;
-				}
-			}
-
+			name_index := find_first_occurence (info_enum.values, enum_value);
 			if name_index == -1
 			{
 				index += write_string (buffer, info_enum.name);
