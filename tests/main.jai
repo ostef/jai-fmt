@@ -333,6 +333,10 @@ test_hexadecimal :: () -> ko : s64
 	i += 1;
 	ko += test_print (i, "1", "{:x}", Test_Flags.A);
 	i += 1;
+	ko += test_print (i, "null", "{:p}", 0);
+	i += 1;
+	ko += test_print (i, "0x1234", "{:p}", cast (*void) 0x1234);
+	i += 1;
 	Basic.print ("%%x, % KOs.\n", ko);
 	Basic.print ("============================\n");
 
@@ -540,7 +544,7 @@ test_any :: () -> ko : s64
 	i += 1;
 	ko += test_print (i, "1.234", "%", 1.234);
 	i += 1;
-	ko += test_print (i, "1.797693e308", "%", F64_MAX);
+	ko += test_print (i, "1.797693e+308", "%", F64_MAX);
 	i += 1;
 
 	ko += test_print (i, "A", "%", Test_Enum.A);
@@ -582,18 +586,10 @@ test_any :: () -> ko : s64
 	ko += test_print (i, "(s64, *s64, *Test_Enum, Test_Poly_Struct (T = Type, N = 500)) -> (bool, string)", "%", Test_Proc);
 	i += 1;
 
-	Foo :: struct
-	{
-		a : string;
-		b : int;
-		c : float;
-	}
 
 	ko += test_print (i, "{ 0, 0 }", "%", Vec2f.{ 0, 0 });
 	i += 1;
 	ko += test_print (i, "{ 10, 0 }", "%", Vec2f.{ 10, 0 });
-	i += 1;
-	ko += test_print (i, "{ a : \"Foo\\nBar\\nBaz\", b : 0, c : 1.234 }", "%", Foo.{ "Foo\nBar\nBaz", 0, 1.234 });
 	i += 1;
 	ko += test_print (i, "\n{ 1, 0, 0,\n  0, 1, 0,\n  0, 0, 1 }", "\n%", MAT3F_IDENTITY);
 	i += 1;
@@ -630,9 +626,9 @@ test_other :: () -> ko : s64
 	i += 1;
 	ko += test_print (i, "(unclosed format)", "{");
 	i += 1;
-	ko += test_print (i, "(invalid specifier)", "{:010.5}", 10);
+	ko += test_print (i, "00010", "{:010.5}", 10);
 	i += 1;
-	ko += test_print (i, "hello (invalid specifier)   sailor", "hello {: +<010}   sailor");
+	ko += test_print (i, "hello (no argument provided)   sailor", "hello {: +<010}   sailor");
 	i += 1;
 	ko += test_print (i, "(invalid specifier)", "{:z}", 10);
 	i += 1;
@@ -646,7 +642,7 @@ test_other :: () -> ko : s64
 	i += 1;
 	ko += test_print (i, "(unclosed format)", "{:.-10i");
 	i += 1;
-	ko += test_print (i, "(invalid specifier)", "{:}");
+	ko += test_print (i, "(no argument provided)", "{:}");
 	i += 1;
 	ko += test_print (i, "(invalid specifier)", "{:-+ kol}");
 	i += 1;
@@ -654,38 +650,55 @@ test_other :: () -> ko : s64
 	i += 1;
 	ko += test_print (i, "àâéèêëîïôùûüæœ⺀⺠", "àâéèêëîïôùûüæœ⺀⺠");
 	i += 1;
+	ko += test_print (i, "Type_Info", "{:t}", Type_Info);
+	i += 1;
+	ko += test_print (i, "Type_Info", "{:t}", type_info (Type_Info));
+	i += 1;
+	ko += test_print (i, "*Type_Info", "{:t}", type_info (*Type_Info));
+	i += 1;
 	Basic.print ("other, % KOs.\n", ko);
 	Basic.print ("============================\n");
 
 	return ko;
 }
 
-test_linalg :: inline () -> ko : s64
+test_struct :: inline () -> ko : s64
 {
-	Basic.print ("Test linalg:\n");
+	Basic.print ("Test struct:\n");
 	ko := 0;
 	i := 0;
 
-	ko += test_print (i, "( 1.234, 5.6785 )", "{:v}", Vec2f.{ 1.234, 5.6785 });
+	ko += test_print (i, "{ 1.234, 5.6785 }", "{}", Vec2f.{ 1.234, 5.6785 });
 	i += 1;
-	ko += test_print (i, "( 1.234, 5.678, 9.1011 )", "{:v}", Vec3f.{ 1.234, 5.678, 9.1011 });
+	ko += test_print (i, "{ 1.234, 5.678, 9.1011 }", "{}", Vec3f.{ 1.234, 5.678, 9.1011 });
 	i += 1;
-	ko += test_print (i, "\n( 1, 0, 0,\n  0, 1, 0,\n  0, 0, 1 )", "\n{:m}", MAT3F_IDENTITY);
+	ko += test_print (i, "\n{ 1, 0, 0,\n  0, 1, 0,\n  0, 0, 1 }", "\n{}", MAT3F_IDENTITY);
 	i += 1;
-	ko += test_print (i, "\n( 1, 0, 0,\n  0, 1, 0,\n  0, 0, 1 )", "\n{:m}", [3]f32.[ f32.[ 1, 0, 0 ], f32.[ 0, 1, 0 ], f32.[ 0, 0, 1 ] ]);
+	ko += test_print (i, "\n{ 001.000, 000.000, 000.000,\n  000.000, 001.000, 000.000,\n  000.000, 000.000, 001.000 }", "\n{:~07.3}", MAT3F_IDENTITY);
 	i += 1;
-	ko += test_print (i, "(not a matrix type)", "{:m}", "Hello");
-	i += 1;
-	ko += test_print (i, "\n( 001.000, 000.000, 000.000,\n  000.000, 001.000, 000.000,\n  000.000, 000.000, 001.000 )", "\n{:~07.3m}", MAT3F_IDENTITY);
-	i += 1;
-	ko += test_print (i, "( 001.000, 000.000, 000.000, 000.000, 001.000, 000.000, 000.000, 000.000, 001.000 )", "{:~$07.3m}", MAT3F_IDENTITY);
-	i += 1;
-	ko += test_print (i, "\n( 1.234,\n  5.6785 )", "\n{:m}", Vec2f.{ 1.234, 5.6785 });
-	i += 1;
-	ko += test_print (i, "\n( 1.234,\n  5.678,\n  9.1011 )", "\n{:m}", Vec3f.{ 1.234, 5.678, 9.1011 });
+	ko += test_print (i, "{ 001.000, 000.000, 000.000, 000.000, 001.000, 000.000, 000.000, 000.000, 001.000 }", "{:~$07.3}", MAT3F_IDENTITY);
 	i += 1;
 
-	Basic.print ("linalg, % KOs.\n", ko);
+	Foo :: struct
+	{
+		a : string; @Fmt_Newline
+		b : int; @Fmt_Newline
+		c : float; @Fmt_Newline
+	}
+
+	ko += test_print (i, "{ \"Foo\\nBar\\nBaz\",\n  0,\n  1.234 }", "%", Foo.{ "Foo\nBar\nBaz", 0, 1.234 });
+	i += 1;
+	ko += test_print (i, "{ \"Foo\\nBar\\nBaz\", 0, 1.234 }", "{:$}", Foo.{ "Foo\nBar\nBaz", 0, 1.234 });
+	i += 1;
+	ko += test_print (i, "{ a : \"Foo\\nBar\\nBaz\",\n  b : 0,\n  c : 1.234 }", "{:!}", Foo.{ "Foo\nBar\nBaz", 0, 1.234 });
+	i += 1;
+	
+	ko += test_print (i, "[ (2) { \"Foo\\nBar\\nBaz\", 0, 1.234 }, { \"Hello Sailor!\", 69105, 3.1415 } ]", "{}", Foo.[ .{ "Foo\nBar\nBaz", 0, 1.234 }, .{ "Hello Sailor!", 69105, 3.1415 } ]);
+	i += 1;
+	ko += test_print (i, "[ (2) { a : \"Foo\\nBar\\nBaz\", b : 0, c : 1.234 }, { a : \"Hello Sailor!\", b : 69105, c : 3.1415 } ]", "{:!}", Foo.[ .{ "Foo\nBar\nBaz", 0, 1.234 }, .{ "Hello Sailor!", 69105, 3.1415 } ]);
+	i += 1;
+
+	Basic.print ("struct, % KOs.\n", ko);
 	Basic.print ("============================\n");
 
 	return ko;
@@ -704,10 +717,10 @@ main :: ()
 	ko += test_arg_index ();
 	ko += test_any ();
 	ko += test_other ();
-	ko += test_linalg ();
+	ko += test_struct ();
 	Basic.print ("Test print:\n");
-	len1 := print ("Hello Sailor!\n{:m}\n{:10.3f}\n", MAT3F_IDENTITY, 1.234);
-	str := fmt (context.allocator, "Hello Sailor!\n{:m}\n{:10.3f}\n", MAT3F_IDENTITY, 1.234);
+	len1 := print ("Hello Sailor!\n{:}\n{:10.3f}\n", MAT3F_IDENTITY, 1.234);
+	str := fmt (context.allocator, "Hello Sailor!\n{:}\n{:10.3f}\n", MAT3F_IDENTITY, 1.234);
 	if len1 != str.count
 		Basic.print ("print returned a length of %, but % was expected.\n", len1, str.count);
 	Basic.print ("============================\n");

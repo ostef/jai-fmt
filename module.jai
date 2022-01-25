@@ -5,7 +5,6 @@
 #load "write_string.jai";
 #load "write_integer.jai";
 #load "write_float.jai";
-#load "write_linalg.jai";
 #load "write_any.jai";
 
 #scope_module
@@ -29,7 +28,7 @@ f64 :: float64;
 // - d: same as above,
 // - x: print 64-bit unsigned integer in lowercase hexadecimal,
 // - X: print 64-bit unsigned integer in uppercase hexadecimal,
-// - p: print pointer as hexadecimal unsigned 64-bit integer, same as %#x,
+// - p: print pointer as hexadecimal unsigned 64-bit integer, print null if zero
 // - f: print 64-bit floating point number in fixed form (uses Ryu d2fixed conversion),
 // - e: print 64-bit floating point number in lowercase exponent form (uses Ryu d2exp conversion),
 // - E: print 64-bit floating point number in uppercase exponent form (uses Ryu d2exp conversion),
@@ -37,12 +36,6 @@ f64 :: float64;
 // - G: print the shortest representation of a 64-bit floating point number between fixed and exponent uppercase form,
 // - a: print 64-bit or 32-bit floating point number in sign + mantissa + exponent lowercase hexadecimal form,
 // - A: print 64-bit or 32-bit floating point number in sign + mantissa + exponent uppercase hexadecimal form,
-// - v: print a vector type. Whether a type is a valid vector type is determined by looking at the type information at runtime.
-// Formatting options get passed to the values of the vector.
-// Valid vector types are integers, floats, fixed size arrays of integers and floats, and structs that have only integers or floats array or non array members.
-// - m: print a vector type. Whether a type is a valid vector type is determined by looking at the type information at runtime.
-// Formatting options get passed to the values of the matrix.
-// Valid matrix types are integers, floats, fixed size arrays of valid vector types, and structs that have only valid vector types members.
 
 Fmt_Buffer :: struct
 {
@@ -62,16 +55,18 @@ Fmt_Buffer :: struct
 
 Fmt_Flags :: enum_flags
 {
-	NONE                   :: 0x00;
-	RIGHT_JUSTIFY          :: 0x00;	// Default
-	LEFT_JUSTIFY           :: 0x01;
-	FORCE_SIGN             :: 0x02;	// Print a '+' in front of positive signed integer values
-	ALIGN_SIGN             :: 0x04;	// Align signed integers, printing a ' ' in front of positive values
-	PAD_WITH_ZEROES        :: 0x08;	// Pad integer and float values with '0' instead of ' ', ignored if LEFT_JUSTIFY is set
-	PRINT_BASE             :: 0x10;	// Print the base prefix for integer values, '0x' or '0X' for hex, '0b' for binary
-	PRINT_ESCAPE_SEQUENCES :: 0x20;	// Print escape sequences for non printable characters
-	LEAVE_TRAILING_ZEROES  :: 0x40;	// For fixed and exponent form floating point numbers, leave trailing zeroes after decimal point
-	SINGLE_LINE            :: 0x80;	// For matrix types, print on one line
+	NONE                   :: 0x000;
+	RIGHT_JUSTIFY          :: 0x000;	// Default
+	LEFT_JUSTIFY           :: 0x001;
+	FORCE_SIGN             :: 0x002;	// Print a '+' in front of positive signed integer values
+	ALIGN_SIGN             :: 0x004;	// Align signed integers, printing a ' ' in front of positive values
+	PAD_WITH_ZEROES        :: 0x008;	// Pad integer and float values with '0' instead of ' ', ignored if LEFT_JUSTIFY is set
+	PRINT_BASE             :: 0x010;	// Print the base prefix for integer values, '0x' or '0X' for hex, '0b' for binary
+	LEAVE_TRAILING_ZEROES  :: 0x020;	// For fixed and exponent form floating point numbers, leave trailing zeroes after decimal point
+	PRINT_ESCAPE_SEQUENCES :: 0x040;	// Print escape sequences for non printable characters
+	QUOTED                 :: 0x080;	// Surround with quotes for character or string specifiers, and print on one line
+	SINGLE_LINE            :: 0x100;	// Print on one line
+	PRINT_MEMBER_NAMES     :: 0x200;	// Print struct member names
 }
 
 Fmt_Arg :: struct (Buffer_Type : Type)
@@ -80,7 +75,7 @@ Fmt_Arg :: struct (Buffer_Type : Type)
 
 	Write_Func :: #type (buffer : *Buffer_Type, arg : This_Type) -> length : s64;
 
-	SPECIFIER_KEYS  :: "csBbidxXpfeEgGaAvm";
+	SPECIFIER_KEYS  :: "csBbidxXpPfeEgGaAt";
 	SPECIFIER_FUNCS :: Write_Func.[
 		#bake_constants write_char (T = Buffer_Type),
 		#bake_constants write_string (T = Buffer_Type),
@@ -90,7 +85,8 @@ Fmt_Arg :: struct (Buffer_Type : Type)
 		#bake_constants write_decimal (T = Buffer_Type),
 		#bake_constants write_hexadecimal (T = Buffer_Type),
 		#bake_constants write_hexadecimal (T = Buffer_Type),
-		#bake_constants write_hexadecimal (T = Buffer_Type),
+		#bake_constants write_pointer (T = Buffer_Type),
+		#bake_constants write_pointer (T = Buffer_Type),
 		#bake_constants write_float_fixed (T = Buffer_Type),
 		#bake_constants write_float_exp (T = Buffer_Type),
 		#bake_constants write_float_exp (T = Buffer_Type),
@@ -98,8 +94,7 @@ Fmt_Arg :: struct (Buffer_Type : Type)
 		#bake_constants write_float_shortest (T = Buffer_Type),
 		#bake_constants write_float_hex (T = Buffer_Type),
 		#bake_constants write_float_hex (T = Buffer_Type),
-		#bake_constants write_vector (T = Buffer_Type),
-		#bake_constants write_matrix (T = Buffer_Type),
+		#bake_constants write_type (T = Buffer_Type)
 	];
 
 	arg_index  := -1;
@@ -113,7 +108,7 @@ Fmt_Arg :: struct (Buffer_Type : Type)
 
 #scope_file
 
-FLAG_KEYS   :: "<>+ 0#\\~$";
+FLAG_KEYS   :: "<>+ 0#~\\'$!";
 FLAG_VALUES :: Fmt_Flags.[
 	.LEFT_JUSTIFY,
 	.RIGHT_JUSTIFY,
@@ -121,12 +116,38 @@ FLAG_VALUES :: Fmt_Flags.[
 	.ALIGN_SIGN,
 	.PAD_WITH_ZEROES,
 	.PRINT_BASE,
-	.PRINT_ESCAPE_SEQUENCES,
 	.LEAVE_TRAILING_ZEROES,
-	.SINGLE_LINE
+	.PRINT_ESCAPE_SEQUENCES,
+	.QUOTED,
+	.SINGLE_LINE,
+	.PRINT_MEMBER_NAMES
 ];
 
 #scope_export
+
+copy_arg :: inline (
+	arg : $T/Fmt_Arg,
+	ptr : *void = null,
+	type : *Type_Info = null,
+	new_func : T.Write_Func = null,
+	new_specifier : u8 = 0,
+	add_flags : Fmt_Flags = .NONE
+) -> T
+{
+	result := arg;
+	if ptr
+		result.value.value_pointer = ptr;
+	if type
+		result.value.type = type;
+	if new_func
+		result.write_func = new_func;
+	if new_specifier
+		result.specifier = new_specifier;
+	if add_flags
+		result.flags |= add_flags;
+
+	return result;
+}
 
 read_arg :: inline (
 	result : *Fmt_Arg ($T),
@@ -244,6 +265,8 @@ read_arg :: inline (
 		result.specifier = fmt_str[i];
 		i += 1;
 	}
+	else
+		result.write_func = write_any;
 	i = len;
 	if i < fmt_str.count
 		i += 1;
@@ -282,16 +305,21 @@ write_arg_to_temp_buffer :: inline (buffer : []u8, arg : Fmt_Arg ($T)) -> length
 	memcpy (*temp_arg, *arg, size_of (Fmt_Arg (T)));
 #if T != Fmt_Buffer
 {
-	// Get write function from the specifier, since we can't interchange write funcs of different types.
-	for si : 0..temp_arg.SPECIFIER_KEYS.count - 1
+	if temp_arg.specifier
 	{
-		if temp_arg.specifier == temp_arg.SPECIFIER_KEYS[si]
+		// Get write function from the specifier, since we can't interchange write funcs of different types.
+		for si : 0..temp_arg.SPECIFIER_KEYS.count - 1
 		{
-			temp_arg.write_func = temp_arg.SPECIFIER_FUNCS[si];
+			if temp_arg.specifier == temp_arg.SPECIFIER_KEYS[si]
+			{
+				temp_arg.write_func = temp_arg.SPECIFIER_FUNCS[si];
 
-			break;
+				break;
+			}
 		}
 	}
+	else
+		temp_arg.write_func = write_any;
 }
 
 	return temp_arg.write_func (*temp_buffer, temp_arg);

@@ -78,6 +78,28 @@ write_hexadecimal :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 	return i;
 }
 
+write_pointer :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
+{
+	if !any_to_ptr (arg.value)
+		return write_string (buffer, "null");
+	i := 0;
+	if arg.specifier == #char "X"
+		i += write_string (buffer, "0X");
+	else
+		i += write_string (buffer, "0x");
+	min_width := -1;
+	if arg.precision >= 0
+		min_width = arg.precision;
+	else if !flagged (arg.flags, .LEFT_JUSTIFY) && flagged (arg.flags, .PAD_WITH_ZEROES)
+		min_width = arg.width - i;
+	if arg.specifier == #char "P"
+		i += write_u64 (buffer, cast (u64) any_to_ptr (arg.value), min_width, UPPER_HEXADECIMAL_BASE);
+	else
+		i += write_u64 (buffer, cast (u64) any_to_ptr (arg.value), min_width, HEXADECIMAL_BASE);
+
+	return i;
+}
+
 write_s64 :: inline (buffer : *$T, value : s64, min_width := -1, $$base := DECIMAL_BASE) -> length : s64
 {
 	sign := cast (s64) (value < 0);

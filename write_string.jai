@@ -1,8 +1,16 @@
 write_char :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 {
-	if flagged (arg.flags, .PRINT_ESCAPE_SEQUENCES)
-		return write_char_escaped (buffer, cast (u32) any_to_u64 (arg.value));
-	return write_char (buffer, cast (u32) any_to_u64 (arg.value));
+	index := 0;
+	if flagged (arg.flags, .QUOTED)
+		index += write_string (buffer, "'");
+	if flagged (arg.flags, .QUOTED) || flagged (arg.flags, .PRINT_ESCAPE_SEQUENCES) || flagged (arg.flags, .SINGLE_LINE)
+		index += write_char_escaped (buffer, cast (u32) any_to_u64 (arg.value));
+	else
+		index += write_char (buffer, cast (u32) any_to_u64 (arg.value));
+	if flagged (arg.flags, .QUOTED)
+		index += write_string (buffer, "'");
+
+	return index;
 }
 
 write_byte :: inline (buffer : *$T, byte : u8) -> length : s64
@@ -42,6 +50,8 @@ write_char_escaped :: inline (buffer : *$T, codepoint : u32) -> length : s64
 		return write_string (buffer, "\\t");
 	case 0x0b;	// Vertical Tab
 		return write_string (buffer, "\\v");
+	case #char "\\";
+		return write_string (buffer, "\\\\");
 	}
 
 	return write_char (buffer, codepoint);
@@ -61,11 +71,20 @@ write_chars :: inline (buffer : *$T, codepoint : u32, count : s64) -> length : s
 write_string :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 {
 	str := any_to_string (arg.value);
-	if !str.data
+	if !str.data && !flagged (arg.flags, .QUOTED)
 		return write_string (buffer, "(null)", arg.precision);
-	if flagged (arg.flags, .PRINT_ESCAPE_SEQUENCES)
-		return write_string_escaped (buffer, str, arg.precision);
-	return write_string (buffer, str, arg.precision);
+
+	index := 0;
+	if flagged (arg.flags, .QUOTED)
+		index += write_string (buffer, "\"");
+	if flagged (arg.flags, .QUOTED) || flagged (arg.flags, .PRINT_ESCAPE_SEQUENCES) || flagged (arg.flags, .SINGLE_LINE)
+		index += write_string_escaped (buffer, str, arg.precision);
+	else
+		index += write_string (buffer, str, arg.precision);
+	if flagged (arg.flags, .QUOTED)
+		index += write_string (buffer, "\"");
+
+	return index;
 }
 
 // @Note (stefan): Strings are UTF-8, so we directly print byte per byte instead of calling
@@ -105,6 +124,8 @@ write_string_escaped :: inline (buffer : *$T, str : string, max_length := -1) ->
 			length += write_string (buffer, "\\t");
 		case 0x0b;	// Vertical Tab
 			length += write_string (buffer, "\\v");
+		case #char "\\";
+			length += write_string (buffer, "\\\\");
 		case;
 			length += write_byte (buffer, str[i]);
 		}

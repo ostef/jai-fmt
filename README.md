@@ -3,34 +3,39 @@
 String formatting module written in Jai.
 
 # Dependencies
-Fmt depends on my port of [Ryū: Fast float to string conversion](https://github.com/ostef/jai-ryu). The to_shortest and string to float conversions are not imported. Ryu is the only module that gets imported by Fmt.
+Fmt depends on my port of [Ryū: Fast float to string conversion](https://github.com/ostef/jai-ryu). The to_shortest and string to float conversions are not imported.  
+Ryu is the only module that gets imported by Fmt.
 
 # Usage
 Fmt supports arbitrary arguments by using `%` to specify an argument slot.
 When using `%`, the type of the result will be retrieved from the type information of the argument, and the `write_any` function will be used.  
 It also supports more complex formatting options using curly braces.
 This is the format of the formatting options:  
-`{[arg_index][:[flags][width][.precision]specifier]}`  
-If `:` is not specified, type information is used to decide what to print. The argument index is optional, meaning an empty format `{}` is the same as `%`.
+`{[arg_index][:[flags][width][.precision][specifier]]}`  
+Everything is optional, meaning `{}` and `{:}` are valid, and they have the same effect as `%`.
+For aggregate types (arrays, structs), the formatting options are passed to all the nested members all the way down.  
+> As of now, it is not possible to individually format struct members (we might do that with notes in the future).  
 
-## Valid flags are:
-* <: right justify. Ignored if width is not set. This is the default,
-* \>: left justify. Ignored if width is not set,
-* +: print a '+' in front of positive signed integer values,
-* ' ': align signed integers, printing a ' ' in front of positive values,
-* 0: pad integer and float values with '0' instead of ' ', ignored if > is set,
-* #: print the base prefix for integer values, '0x' or '0X' for hex, '0b' for binary,
-* \\: print escape sequences for non printable characters,
-* ~: for fixed and exponent form floating point numbers, leave trailing zeroes after decimal point. By default, trailing zeroes are trimmed,
-* $: for matrix types, print on one line.
+## Flags:
+* `<`: right justify. Ignored if width is not set. This is the default, and the flag has a value of 0; this exists just for consistency with `>`,
+* `>`: left justify. Ignored if width is not set,
+* `+`: print a '+' in front of positive signed integer values,
+* `' '`: align signed integers, printing a ' ' in front of positive values,
+* `0`: pad integer and float values with '0' instead of ' ', ignored if `>` is set,
+* `#`: print the base prefix for integer values, '0x' or '0X' for hex, '0b' for binary,
+* `~`: for fixed and exponent form floating point numbers, leave trailing zeroes after decimal point. By default, trailing zeroes are trimmed,
+* `\\`: print escape sequences for non printable characters,
+* `'`: print surrounding single quotes for characters, double quotes for strings,
+* `$`: print on one line, for strings and characters, this is the same as the `\\` flag. The `@Fmt_Newline` note on struct members is ignored of course,
+* `!`: print struct member names
 
-## Valid width are:
-Positive integer values, or a * character to retrieve the width from the next argument that is provided.
+## Width:
+Valid width values are positive integer values, or a * character to retrieve the width from the next argument that is provided.
 
-## Valid precisions are:
-Positive or negative integer values, or a * character to retrieve the precision from the next argument that is provided.
+## Precision:
+Valid precision values are positive or negative integer values, or a * character to retrieve the precision from the next argument that is provided.
 
-## Valid specifiers are:
+## Specifiers:
 * `c`: print Unicode codepoint,
 * `s`: print UTF-8 string,
 * `B`: print boolean value, anything non-zero is treated as true,
@@ -39,7 +44,8 @@ Positive or negative integer values, or a * character to retrieve the precision 
 * `d`: same as above,
 * `x`: print 64-bit unsigned integer in lowercase hexadecimal,
 * `X`: print 64-bit unsigned integer in uppercase hexadecimal,
-* `p`: print pointer as hexadecimal unsigned 64-bit integer, same as `#x`,
+* `p`: print pointers as lowercase hexadecimal 64-bit unsigned integer, print 'null' if the value is null,
+* `P`: print pointers as uppercase hexadecimal 64-bit unsigned integer, print 'null' if the value is null,
 * `f`: print 64-bit floating point number in fixed form (uses Ryu d2fixed conversion),
 * `e`: print 64-bit floating point number in lowercase exponent form (uses Ryu d2exp conversion),
 * `E`: print 64-bit floating point number in uppercase exponent form (uses Ryu d2exp conversion),
@@ -47,20 +53,15 @@ Positive or negative integer values, or a * character to retrieve the precision 
 * `G`: print the shortest representation of a 64-bit floating point number between fixed and exponent uppercase form,
 * `a`: print 64-bit or 32-bit floating point number in sign + mantissa + exponent lowercase hexadecimal form,
 * `A`: print 64-bit or 32-bit floating point number in sign + mantissa + exponent uppercase hexadecimal form,
-* `v`: print a vector type. Whether a type is a valid vector type is determined by looking at the type information at runtime.
-Formatting options get passed to the values of the vector.
-Valid vector types are integers, floats, fixed size arrays of integers and floats, and structs that have only integers or floats array or non array members. Elements must be contiguous and of the same size (not yet checked for, if this is not true bad things will happen).
-* `m`: print a matrix type. Unless specified otherwise, the NxM matrix is printed on N lines. Whether a type is a valid vector type is determined by looking at the type information at runtime.
-Formatting options get passed to the values of the matrix.
-Valid matrix types are integers, floats, fixed size arrays of valid vector types, and structs that have only valid vector types members. Elements must be contiguous and of the same size (not yet checked for, if this is not true bad things will happen).
+* `t`: print `Type`, `*Type_Info` or a pointer of substruct of `Type_Info` as a type.
 
 ## Error cases:
 * If the format is not closed, '(unclosed format)' is printed,
 * If the specifier is invalid, '(invalid specifier)' is printed,
 * If the provided argument index is not a valid unsigned integer, '(invalid argument index)' is printed,
 * If the provided argument index is outside the range of provided arguments, or there are not enough arguments, '(no argument provided)' is printed,
-* If the argument cannot be converted to the specifier type, the default value is printed (0 for integer and float types, empty string for strings),
-* For `v` and `m` specifiers, if the type of the argument is not a valid vector or matrix type, '(not a vector type)' or '(not a matrix type)' is printed. This is not consistent with other specifiers, so this might change in the future.
+* For most specifiers, if the argument cannot be converted to the correct type, the default value is printed (0 for integer and float types, empty string for strings),
+* For the `t` specifier, if the type of the argument is not a `Type`, `*Type_Info` or a pointer of substruct of `Type_Info`, '(not a type)' is printed.
 
 These are the main procedures:
 ```jai
@@ -84,10 +85,16 @@ print :: inline (value : $T) -> length : s64
 println :: inline (value : $T) -> length : s64
 ```
 
+The return value of these functions is the final UTF-8 length of the resulting string, not the actual number of characters that have been written.
+
+Calling `format_buffered` with a null buffer is valid, and it effectively computes the final length of the resulting string. The type `T` cannot be void though, so if you want to pass null, cast it to a valid buffer type, like `Fmt_Buffer`.
+
+The procedures that write to a buffer are at export scope, so you can use them without having to call `format` or `format_buffered`. Same for parsing a format, and writing an argument with field width handling (`write_arg`).
+
 # Extensibility
 `format_buffered` accepts a polymorphic buffer as argument.
 This makes it possible, for example, to directly print the characters to the desired output instead of allocating a temporary buffer and writing to it (see printing functions in `print.jai`).
-This also allows the user to use a dynamically growing buffer instead of computing the final length of the string by calling `format_buffered` with a null buffer and then allocating a buffer of sufficient size like in the `format` procedure.
+This also allows the caller to use a dynamically growing buffer instead of computing the final length of the string by calling `format_buffered` with a null buffer and then allocating a buffer of sufficient size like in the `format` procedure.
 The buffer type `T` has to be a struct that have at least one procedure inside with the following name and signature:
 ```jai
 write_byte :: (buffer : *T, byte : u8)

@@ -2,6 +2,39 @@
 
 // This was originally in a separate module, but we want Fmt to be as independant as possible.
 
+is_subclass_of :: (info : *Type_Info, of : *Type_Info_Struct, nested := false) -> bool #must
+{
+	if info.type != .STRUCT
+		return false;
+	info_struct := cast (*Type_Info_Struct) info;
+	while true
+	{
+		if info_struct == of
+			return nested;
+		if info_struct.members.count == 0
+			break;
+		member := *info_struct.members[0];
+		if !flagged (member.flags, .USING)
+			break;
+		if member.type.type == .STRUCT
+		{
+			info_struct = cast (*Type_Info_Struct) member.type;
+			nested = true;
+
+			continue;
+		}
+		else if member.type.type == .POINTER
+		{
+			info_pointer := cast (*Type_Info_Pointer) member.type;
+
+			return is_subclass_of (info_pointer.pointer_to, of, true);
+		}
+		break;
+	}
+
+	return false;
+}
+
 relative_to_absolute_ptr :: inline (ptr : *void, size : s64) -> *void #must
 {
 	offset : s64;

@@ -1,60 +1,35 @@
 write_any :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 {
-	return write_any (buffer, arg.value);
+	return write_any (buffer, arg, false);
 }
 
-write_any :: inline (buffer : *$T, ptr : *void, info : *Type_Info, indentation_level := 0, is_nested := false) -> length : s64
-{
-	any : Any = ---;
-	any.value_pointer = ptr;
-	any.type = info;
-
-	return write_any (buffer, any, indentation_level, is_nested);
-}
-
-write_any :: (buffer : *$T, any : Any, indentation_level := 0, is_nested := false) -> length : s64
+write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 {
 	index := 0;
-	index += write_chars (buffer, #char "\t", indentation_level);
-
+	any := arg.value;
 	info := any.type;
 	if #complete info.type ==
 	{
 	case .STRING;
 		if is_nested
 		{
-			index += write_char (buffer, #char "\"");
-			index += write_string_escaped (buffer, any_to_string (any));
-			index += write_char (buffer, #char "\"");
+			index += write_arg (buffer, copy_arg (arg, new_func = write_string, add_flags = .QUOTED));
 
 			return index;
 		}
-		return index + write_string (buffer, any_to_string (any));
+		return index + write_arg (buffer, copy_arg (arg, new_func = write_string));
 
 	case .BOOL;
-		return index + write_bool (buffer, any_to_bool (any));
+		return index + write_arg (buffer, copy_arg (arg, new_func = write_bool));
 
 	case .INTEGER;
-		info_int := cast (*Type_Info_Integer) info;
-		if info_int.signed
-			return index + write_s64 (buffer, any_to_s64 (any));
-		else
-			return index + write_u64 (buffer, any_to_u64 (any));
+		return index + write_arg (buffer, copy_arg (arg, new_func = write_decimal));
 
 	case .FLOAT;
-		return index + write_f64 (buffer, any_to_f64 (any));
+		return index + write_arg (buffer, copy_arg (arg, new_func = write_float_shortest));
 
 	case .POINTER;
-		ptr := any_to_ptr (any);
-		if ptr
-		{
-			index += write_string (buffer, "0x");
-			index += write_u64 (buffer, cast (u64) ptr, base = HEXADECIMAL_BASE);
-
-			return index;
-		}
-
-		return write_string (buffer, "null");
+		return index + write_arg (buffer, copy_arg (arg, new_func = write_pointer));
 
 	case .ENUM;
 		info_enum := cast (*Type_Info_Enum) info;
@@ -120,24 +95,6 @@ write_any :: (buffer : *$T, any : Any, indentation_level := 0, is_nested := fals
 
 	case .STRUCT;
 		info_struct := cast (*Type_Info_Struct) info;
-		print_member_names := false;
-		{
-			previous_type : *Type_Info;
-			highest_offset := -1;
-			for info_struct.members
-			{
-				if it.offset_in_bytes <= highest_offset
-					continue;
-				highest_offset = it.offset_in_bytes;
-				if previous_type && it.type != previous_type
-				{
-					print_member_names = true;
-
-					break;
-				}
-				previous_type = it.type;
-			}
-		}
 		index += write_string (buffer, "{ ");
 		highest_offset := -1;
 		newline := false;
@@ -152,13 +109,14 @@ write_any :: (buffer : *$T, any : Any, indentation_level := 0, is_nested := fals
 				else
 					index += write_string (buffer, ", ");
 			}
-			if print_member_names
+			if flagged (arg.flags, .PRINT_MEMBER_NAMES)
 			{
 				index += write_string (buffer, it.name);
 				index += write_string (buffer, " : ");
 			}
-			index += write_any (buffer, any.value_pointer + it.offset_in_bytes, it.type, is_nested = true);
-			newline = !is_nested && find_first_occurence (it.notes, "Fmt_Newline") != -1;
+			ptr := any.value_pointer + it.offset_in_bytes;
+			index += write_any (buffer, copy_arg (arg, ptr = ptr, type = it.type), is_nested = true);
+			newline = !flagged (arg.flags, .SINGLE_LINE) && !is_nested && find_first_occurence (it.notes, "Fmt_Newline") != -1;
 			highest_offset = it.offset_in_bytes;
 		}
 		index += write_string (buffer, " }");
@@ -177,26 +135,24 @@ write_any :: (buffer : *$T, any : Any, indentation_level := 0, is_nested := fals
 		for i : 0..count - 1
 		{
 			if i != 0
-				index += write_any (buffer, ", ");
+				index += write_string (buffer, ", ");
 			ptr := data + i * info_array.element_type.runtime_size;
-			index += write_any (buffer, ptr, info_array.element_type, is_nested = true);
+			index += write_any (buffer, copy_arg (arg, ptr = ptr, type = info_array.element_type), is_nested = true);
 		}
 		index += write_string (buffer, " ]");
 
 		return index;
 
 	case .VARIANT;
-		info_variant := cast (*Type_Info_Variant) info;
-		variant := any;
-		variant.type = info_variant.variant_of;
-
-		return index + write_any (buffer, variant);
+		return index + write_any (buffer, copy_arg (arg, type = (cast (*Type_Info_Variant) info).variant_of));
 
 	case .TYPE;
 		return index + write_type (buffer, <<cast (**Type_Info) any.value_pointer);
 	
 	case .ANY;
-		return index + write_any (buffer, <<cast (*Any) any.value_pointer);
+		new_any := <<cast (*Any) any.value_pointer;
+
+		return index + write_any (buffer, copy_arg (arg, ptr = new_any.value_pointer, type = new_any.type));
 
 	case .PROCEDURE;
 		index += write_string (buffer, "procedure 0x");
@@ -231,6 +187,14 @@ write_relative_pointer_size :: inline (buffer : *$T, size : s64) -> length : s64
 		return write_string (buffer, "~s64");
 	}
 	return 0;
+}
+
+write_type :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
+{
+	info := arg.value.type;
+	if info.type == .TYPE || info.type == .POINTER && is_subclass_of ((cast (*Type_Info_Pointer) info).pointer_to, type_info (Type_Info))
+		return write_type (buffer, <<cast (**Type_Info) arg.value.value_pointer);
+	return write_string (buffer, "(not a type)");
 }
 
 write_type :: (buffer : *$T, info : *Type_Info) -> length : s64
@@ -412,4 +376,13 @@ write_type :: (buffer : *$T, info : *Type_Info) -> length : s64
 	}
 
 	return write_string (buffer, "(unhandled type)");
+}
+
+write_any :: (buffer : *$T, ptr : *void, type : *Type_Info) -> length : s64
+{
+	arg : Fmt_Arg (T);
+	arg.value.value_pointer = ptr;
+	arg.value.type = type;
+
+	return write_any (buffer, arg);
 }
