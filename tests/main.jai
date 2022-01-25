@@ -184,6 +184,15 @@ test_string :: () -> ko : s64
 	i += 1;
 	ko += test_print (i, "          Hello Sailor", "{:15.5s} Sailor", "Hello");
 	i += 1;
+	ko += test_print (i, " \"Hello Sailor\"", "{:'15s}", "Hello Sailor");
+	i += 1;
+	ko += test_print (i, "a", "{:c}", #char "a");
+	ko += test_print (i, "'a'", "{:'c}", #char "a");
+	ko += test_print (i, "              a", "{:15c}", #char "a");
+	ko += test_print (i, "            'a'", "{:'15c}", #char "a");
+	ko += test_print (i, "é", "{:c}", #char "é");
+	ko += test_print (i, "⺠", "{:c}", #char "⺠");
+	ko += test_print (i, "'⺠'", "{:'c}", #char "⺠");
 	Basic.print ("%%s, % KOs.\n", ko);
 	Basic.print ("============================\n");
 
