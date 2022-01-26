@@ -154,7 +154,8 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 		return index + write_string (buffer, "(unhandled type)");
 	}
 
-	return index + write_string (buffer, "(unhandled type)");
+	// We handle all types, so if we get here then type info is corrupt.
+	return index + write_string (buffer, "(corrupt type info)");
 }
 
 write_relative_pointer_size :: inline (buffer : *$T, size : s64) -> length : s64
@@ -179,9 +180,10 @@ write_relative_pointer_size :: inline (buffer : *$T, size : s64) -> length : s64
 write_type :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 {
 	info := arg.value.type;
-	if info.type == .TYPE || info.type == .POINTER && is_substruct_of ((cast (*Type_Info_Pointer) info).pointer_to, type_info (Type_Info))
+	if info.type == .TYPE
+	|| info.type == .POINTER && is_substruct_of ((cast (*Type_Info_Pointer) info).pointer_to, type_info (Type_Info))
 		return write_type (buffer, <<cast (**Type_Info) arg.value.value_pointer);
-	return write_string (buffer, "(not a type)");
+	return write_type (buffer, arg.value.type);
 }
 
 write_type :: (buffer : *$T, info : *Type_Info) -> length : s64
@@ -362,7 +364,8 @@ write_type :: (buffer : *$T, info : *Type_Info) -> length : s64
 		return write_string (buffer, "(unhandled type)");
 	}
 
-	return write_string (buffer, "(unhandled type)");
+	// We handle all types, so if we get here then type info is corrupt.
+	return write_string (buffer, "(corrupt type info)");
 }
 
 write_any :: (buffer : *$T, ptr : *void, type : *Type_Info) -> length : s64
