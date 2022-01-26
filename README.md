@@ -7,13 +7,10 @@ Fmt depends on my port of [Ryū: Fast float to string conversion](https://github
 Ryu is the only module that gets imported by Fmt.
 
 # Usage
-Fmt supports arbitrary arguments by using `%` to specify an argument slot.
-When using `%`, the type of the result will be retrieved from the type information of the argument, and the `write_any` function will be used.  
-It also supports more complex formatting options using curly braces.
-This is the format of the formatting options:  
+Formatting arguments follow this pattern:  
 `{[arg_index][:[flags][width][.precision][specifier]]}`  
-Everything is optional, meaning `{}` and `{:}` are valid, and they have the same effect as `%`.
-For aggregate types (arrays, structs), the formatting options are passed to all the nested members all the way down.  
+If no specifier is present, the type information of the value is used to decide what to print. `%` can be used instead of empty curly braces.
+For aggregate types (arrays, structs), the formatting options are passed to the nested members all the way down.  
 > As of now, it is not possible to individually format struct members (we might do that with notes in the future).  
 
 ## Flags:
@@ -26,7 +23,7 @@ For aggregate types (arrays, structs), the formatting options are passed to all 
 * `~`: for fixed and exponent form floating point numbers, leave trailing zeroes after decimal point. By default, trailing zeroes are trimmed,
 * `\\`: print escape sequences for non printable characters,
 * `'`: print surrounding single quotes for characters, double quotes for strings,
-* `$`: print on one line, for strings and characters, this is the same as the `\\` flag. The `@Fmt_Newline` note on struct members is ignored of course,
+* `$`: print on one line, for strings and characters, this is the same as the `\\` flag,
 * `!`: print struct member names
 
 ## Width:
@@ -53,15 +50,14 @@ Valid precision values are positive or negative integer values, or a * character
 * `G`: print the shortest representation of a 64-bit floating point number between fixed and exponent uppercase form,
 * `a`: print 64-bit or 32-bit floating point number in sign + mantissa + exponent lowercase hexadecimal form,
 * `A`: print 64-bit or 32-bit floating point number in sign + mantissa + exponent uppercase hexadecimal form,
-* `t`: print `Type`, `*Type_Info` or a pointer of substruct of `Type_Info` as a type.
+* `t`: print a `Type` or type information as a type. For other values, print the value's type.
 
 ## Error cases:
 * If the format is not closed, '(unclosed format)' is printed,
 * If the specifier is invalid, '(invalid specifier)' is printed,
 * If the provided argument index is not a valid unsigned integer, '(invalid argument index)' is printed,
-* If the provided argument index is outside the range of provided arguments, or there are not enough arguments, '(no argument provided)' is printed,
-* For most specifiers, if the argument cannot be converted to the correct type, the default value is printed (0 for integer and float types, empty string for strings),
-* For the `t` specifier, if the type of the argument is not a `Type`, `*Type_Info` or a pointer of substruct of `Type_Info`, '(not a type)' is printed.
+* If there are not enough arguments, '(no argument provided)' is printed,
+* For most specifiers, if the argument cannot be converted to the correct type, the default value is printed (0 for integer and float types, empty string for strings).
 
 These are the main procedures:
 ```jai
@@ -85,9 +81,9 @@ print :: inline (value : $T) -> length : s64
 println :: inline (value : $T) -> length : s64
 ```
 
-The return value of these functions is the final UTF-8 length of the resulting string, not the actual number of characters that have been written.
+The return value of these functions is the number of UTF-8 units (bytes) needed for the final string, not the actual number of bytes that have been written.
 
-Calling `format_buffered` with a null buffer is valid, and it effectively computes the final length of the resulting string. The type `T` cannot be void though, so if you want to pass null, cast it to a valid buffer type, like `Fmt_Buffer`.
+Calling `format_buffered` with a null buffer is valid, and it effectively computes the final length of the resulting UTF-8 string. The type `T` cannot be void though, so if you want to pass null, cast it to a valid buffer type pointer, like `Fmt_Buffer`.
 
 The procedures that write to a buffer are at export scope, so you can use them without having to call `format` or `format_buffered`. Same for parsing a format, and writing an argument with field width handling (`write_arg`).
 

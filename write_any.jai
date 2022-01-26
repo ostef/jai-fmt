@@ -368,7 +368,7 @@ write_type :: (buffer : *$T, info : *Type_Info) -> length : s64
 	return write_string (buffer, "(corrupt type info)");
 }
 
-write_any :: (buffer : *$T, ptr : *void, type : *Type_Info) -> length : s64
+write_any :: inline (buffer : *$T, ptr : *void, type : *Type_Info) -> length : s64
 {
 	arg : Fmt_Arg (T);
 	arg.value.value_pointer = ptr;
