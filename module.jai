@@ -16,8 +16,9 @@ f64 :: float64;
 
 // Format:
 // * % will print the argument based on the type information
-// * {[arg_index][:[flags][width][.precision]specifier]} for more advanced formatting options
-// width and precision can be '*' instead of an unsigned integer, to read the value from the args array.
+// * {[arg_index][:[flags][width][.precision][specifier]]} for more advanced formatting options
+// width can be '*' instead of an unsigned integer, to read the value from the args array.
+// precision can be '*' instead of an integer, to read the value from the args array.
 
 // Valid specifiers are:
 // - c: print Unicode codepoint,
@@ -36,6 +37,7 @@ f64 :: float64;
 // - G: print the shortest representation of a 64-bit floating point number between fixed and exponent uppercase form,
 // - a: print 64-bit or 32-bit floating point number in sign + mantissa + exponent lowercase hexadecimal form,
 // - A: print 64-bit or 32-bit floating point number in sign + mantissa + exponent uppercase hexadecimal form,
+// - t: print a Type or type information as a type. For other values, print the value's type.
 
 Fmt_Buffer :: struct
 {
