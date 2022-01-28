@@ -777,7 +777,7 @@ main :: ()
 	{
 		write_byte : (buffer : *Correct_Buffer, byte : u8);
 	}
-	write_f64 (cast (*Correct_Buffer) null, 10);
+	//write_f64 (cast (*Correct_Buffer) null, 10);
 
 	ko := 0;
 	ko += test_string ();
