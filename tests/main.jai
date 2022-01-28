@@ -143,6 +143,10 @@ Vec3f :: struct
 VEC3F_ZERO :: Vec3f.{ 0, 0, 0 };
 VEC3F_ONE  :: Vec3f.{ 1, 1, 1 };
 
+PROFILE_COUNT :: 10000;
+
+profile : bool;
+
 test_print :: (n : s64, expected : string, fmt_str : string, args : ..Any) -> ko : s64
 {
 	str := fmt (context.allocator, fmt_str, ..args);
@@ -155,6 +159,20 @@ test_print :: (n : s64, expected : string, fmt_str : string, args : ..Any) -> ko
 		return 1;
 	}
 	Basic.print ("[%]: OK.\n", n);
+	if profile
+	{
+		buff : [1024]u8 = ---;
+		total_time : f64;
+		for 0..PROFILE_COUNT - 1
+		{
+			fmt_buff := make_fmt_buffer (buff);
+			start := Basic.get_time ();
+			len := fmt_buffered (*fmt_buff, fmt_str, ..args);
+			end := Basic.get_time ();
+			total_time += (end - start) * 1000;
+		}
+		Basic.print ("[%]: Average time: % ms. fmt_str was '%'.\n", n, total_time / PROFILE_COUNT, fmt_str);
+	}
 
 	return 0;
 }
@@ -729,6 +747,38 @@ test_struct :: inline () -> ko : s64
 
 main :: ()
 {
+	cmd := Basic.get_command_line_arguments ();
+	for cmd
+	{
+		if it == "profile"
+		{
+			profile = true;
+
+			break;
+		}
+	}
+
+	// Test for rejecting non buffer types
+	Almost_Correct_Buffer :: struct
+	{
+		// buffer is a *void, should be *Almost_Correct_Buffer
+		write_byte :: (buffer : *void, byte : u8)
+		{
+
+		}
+	}
+	// Uncomment below for compiler error
+	//write_f64 (null, 10);
+	//write_f64 (*MAT3F_IDENTITY, 10);
+	//write_f64 (cast (*Almost_Correct_Buffer) null, 10);
+
+	// Non constant write_byte procedure works.
+	Correct_Buffer :: struct
+	{
+		write_byte : (buffer : *Correct_Buffer, byte : u8);
+	}
+	write_f64 (cast (*Correct_Buffer) null, 10);
+
 	ko := 0;
 	ko += test_string ();
 	ko += test_decimal ();

@@ -55,6 +55,53 @@ Fmt_Buffer :: struct
 	capacity : s64;
 }
 
+make_fmt_buffer :: inline (array : []u8) -> Fmt_Buffer #must
+{
+	result : Fmt_Buffer;
+	result.data = array.data;
+	result.capacity = array.count;
+
+	return result;
+}
+
+make_fmt_buffer :: inline (str : string) -> Fmt_Buffer #must
+{
+	result : Fmt_Buffer;
+	result.data = str.data;
+	result.capacity = str.count;
+
+	return result;
+}
+
+reject_non_buffer_types :: inline (info : *Type_Info) -> *Type_Info #must
+{
+	if info.type != .STRUCT
+		return null;
+	info_struct := cast (*Type_Info_Struct) info;
+	for info_struct.members
+	{
+		if it.name == "write_byte"
+		{
+			if it.type.type != .PROCEDURE
+				return null;
+			info_proc := cast (*Type_Info_Procedure) it.type;
+			if info_proc.argument_types.count != 2 || info_proc.return_types.count != 0
+				return null;
+			if info_proc.argument_types[0].type != .POINTER
+				return null;
+			info_arg0 := cast (*Type_Info_Pointer) info_proc.argument_types[0];
+			if info_arg0.relative_pointer_size != 0 || info_arg0.pointer_to != info
+				return null;
+			if info_proc.argument_types[1] != type_info (u8)
+				return null;
+
+			return info;
+		}
+	}
+
+	return null;
+}
+
 Fmt_Flags :: enum_flags
 {
 	NONE                   :: 0x000;
@@ -128,13 +175,14 @@ FLAG_VALUES :: Fmt_Flags.[
 #scope_export
 
 copy_arg :: inline (
-	arg : $T/Fmt_Arg,
+	arg : Fmt_Arg ($T),
 	ptr : *void = null,
 	type : *Type_Info = null,
-	new_func : T.Write_Func = null,
+	new_func : arg.Write_Func = null,
 	new_specifier : u8 = 0,
 	add_flags : Fmt_Flags = .NONE
-) -> T
+) -> Fmt_Arg (T)
+#modify { T = reject_non_buffer_types (T); }
 {
 	result := arg;
 	if ptr
@@ -159,7 +207,8 @@ read_arg :: inline (
 ) ->
 	fmt_skip : s64 #must,
 	arg_skip : s64 #must
-	#no_abc
+#no_abc
+#modify { T = reject_non_buffer_types (T); }
 {
 	arg_skip := 0;
 	i := 0;
@@ -296,6 +345,7 @@ read_arg :: inline (
 #scope_file
 
 write_arg_to_temp_buffer :: inline (buffer : []u8, arg : Fmt_Arg ($T)) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	#assert size_of (Fmt_Arg (T)) == size_of (Fmt_Arg (Fmt_Buffer));
 
@@ -330,6 +380,7 @@ write_arg_to_temp_buffer :: inline (buffer : []u8, arg : Fmt_Arg ($T)) -> length
 #scope_export
 
 write_arg :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64 #must
+#modify { T = reject_non_buffer_types (T); }
 {
 	if !arg.write_func
 		return 0;
@@ -361,6 +412,7 @@ write_arg :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64 #must
 
 fmt_buffered :: format_buffered;
 format_buffered :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	buffer_index := 0;
 	fmt_index    := 0;

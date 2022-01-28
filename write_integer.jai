@@ -4,11 +4,13 @@ HEXADECIMAL_BASE       :: "0123456789abcdef";
 UPPER_HEXADECIMAL_BASE :: "0123456789ABCDEF";
 
 write_bool :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	return write_bool (buffer, any_to_bool (arg.value));
 }
 
 write_bool :: inline (buffer : *$T, value : bool) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	if value
 		return write_string (buffer, "true");
@@ -16,6 +18,7 @@ write_bool :: inline (buffer : *$T, value : bool) -> length : s64
 }
 
 write_binary :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	i := 0;
 	if flagged (arg.flags, .PRINT_BASE)
@@ -33,6 +36,7 @@ write_binary :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 }
 
 write_decimal :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	i := 0;
 	unsigned_value, negative := any_to_integer (arg.value);
@@ -55,6 +59,7 @@ write_decimal :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 }
 
 write_hexadecimal :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	i := 0;
 	if flagged (arg.flags, .PRINT_BASE)
@@ -79,6 +84,7 @@ write_hexadecimal :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 }
 
 write_pointer :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	if !any_to_ptr (arg.value)
 		return write_string (buffer, "null");
@@ -101,6 +107,7 @@ write_pointer :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 }
 
 write_s64 :: inline (buffer : *$T, value : s64, min_width := -1, $$base := DECIMAL_BASE) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	sign := cast (s64) (value < 0);
 	unsigned_value := cast, no_check (u64) value;
@@ -114,6 +121,7 @@ write_s64 :: inline (buffer : *$T, value : s64, min_width := -1, $$base := DECIM
 }
 
 write_u64 :: inline (buffer : *$T, value : u64, min_width := -1, $$base := DECIMAL_BASE) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	length := 0;
 	tmp := value;

@@ -1,9 +1,11 @@
 write_any :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	return write_any (buffer, arg, false);
 }
 
 write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	index := 0;
 	any := arg.value;
@@ -159,6 +161,7 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 }
 
 write_relative_pointer_size :: inline (buffer : *$T, size : s64) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	if size ==
 	{
@@ -178,6 +181,7 @@ write_relative_pointer_size :: inline (buffer : *$T, size : s64) -> length : s64
 }
 
 write_type :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	info := arg.value.type;
 	if info.type == .TYPE
@@ -187,6 +191,7 @@ write_type :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 }
 
 write_type :: (buffer : *$T, info : *Type_Info) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	if #complete info.type ==
 	{
@@ -369,6 +374,7 @@ write_type :: (buffer : *$T, info : *Type_Info) -> length : s64
 }
 
 write_any :: inline (buffer : *$T, ptr : *void, type : *Type_Info) -> length : s64
+#modify { T = reject_non_buffer_types (T); }
 {
 	arg : Fmt_Arg (T);
 	arg.value.value_pointer = ptr;
