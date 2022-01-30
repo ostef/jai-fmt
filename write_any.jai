@@ -270,7 +270,7 @@ write_type :: (buffer : *$T, info : *Type_Info) -> length : s64
 		index := 0;
 		if info_struct.name
 			index += write_string (buffer, info_struct.name);
-		else if flagged (info_struct.struct_flags, .UNION)
+		else if flagged (info_struct.textual_flags, .UNION)
 			index += write_string (buffer, "(anonymous union)");
 		else
 			index += write_string (buffer, "(anonymous struct)");
