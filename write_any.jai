@@ -37,7 +37,6 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 		info_enum := cast (*Type_Info_Enum) info;
 		info_integer := cast (*Type_Info_Integer) info_enum.internal_type;
 		enum_value := any_to_s64 (any.value_pointer, info_integer);
-
 		if flagged (info_enum.enum_type_flags, .FLAGS)
 		{
 			flags_value := cast (u64) enum_value;
