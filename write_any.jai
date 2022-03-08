@@ -136,7 +136,7 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 		return index + write_any (buffer, copy_arg (arg, type = (cast (*Type_Info_Variant) info).variant_of));
 
 	case .TYPE;
-		return index + write_type (buffer, <<cast (**Type_Info) any.value_pointer);
+		return index + write_type (buffer, <<cast (**Type_Info) any.value_pointer, flagged (arg.flags, .PRINT_MEMBER_NAMES));
 	
 	case .ANY;
 		new_any := <<cast (*Any) any.value_pointer;
@@ -167,13 +167,10 @@ write_relative_pointer_size :: inline (buffer : *$T, size : s64) -> length : s64
 	{
 	case 1;
 		return write_string (buffer, "~s8");
-
 	case 2;
 		return write_string (buffer, "~s16");
-
 	case 4;
 		return write_string (buffer, "~s32");
-
 	case 8;
 		return write_string (buffer, "~s64");
 	}
@@ -186,11 +183,11 @@ write_type :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 	info := arg.value.type;
 	if info.type == .TYPE
 	|| info.type == .POINTER && is_substruct_of ((cast (*Type_Info_Pointer) info).pointer_to, type_info (Type_Info))
-		return write_type (buffer, <<cast (**Type_Info) arg.value.value_pointer);
-	return write_type (buffer, arg.value.type);
+		return write_type (buffer, <<cast (**Type_Info) arg.value.value_pointer, flagged (arg.flags, .PRINT_MEMBER_NAMES));
+	return write_type (buffer, arg.value.type, flagged (arg.flags, .PRINT_MEMBER_NAMES));
 }
 
-write_type :: (buffer : *$T, info : *Type_Info) -> length : s64
+write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> length : s64
 #modify { T = reject_non_buffer_types (T); }
 {
 	if #complete info.type ==
@@ -256,7 +253,7 @@ write_type :: (buffer : *$T, info : *Type_Info) -> length : s64
 			i += write_string (buffer, " ");
 		}
 
-		return i + write_type (buffer, info_pointer.pointer_to);
+		return i + write_type (buffer, info_pointer.pointer_to, print_member_names);
 
 	case .ENUM;
 		info_enum := cast (*Type_Info_Enum) info;
@@ -281,11 +278,13 @@ write_type :: (buffer : *$T, info : *Type_Info) -> length : s64
 			{
 				if it_index != 0
 					index += write_string (buffer, ", ");
-				index += write_string (buffer, param.name);
+				if print_member_names
+					index += write_string (buffer, param.name);
 
 				if param.offset_into_constant_storage >= 0
 				{
-					index += write_string (buffer, " = ");
+					if print_member_names
+						index += write_string (buffer, " = ");
 					index += write_any (buffer, info_struct.constant_storage_buffer + param.offset_into_constant_storage, param.type);
 				}
 			}
@@ -313,7 +312,7 @@ write_type :: (buffer : *$T, info : *Type_Info) -> length : s64
 		case .RESIZABLE;
 			index += write_string (buffer, "[..]");
 		}
-		index += write_type (buffer, info_array.element_type);
+		index += write_type (buffer, info_array.element_type, print_member_names);
 
 		return index;
 
@@ -325,7 +324,7 @@ write_type :: (buffer : *$T, info : *Type_Info) -> length : s64
 		{
 			if it_index != 0
 				index += write_string (buffer, ", ");
-			index += write_type (buffer, it);
+			index += write_type (buffer, it, print_member_names);
 		}
 		index += write_string (buffer, ")");
 
@@ -338,7 +337,7 @@ write_type :: (buffer : *$T, info : *Type_Info) -> length : s64
 			{
 				if it_index != 0
 					index += write_string (buffer, ", ");
-				index += write_type (buffer, it);
+				index += write_type (buffer, it, print_member_names);
 			}
 			if info_procedure.return_types.count > 1
 				index += write_string (buffer, ")");
