@@ -35,8 +35,6 @@ f64 :: float64;
 // - E: print 64-bit floating point number in uppercase exponent form (uses Ryu d2exp conversion),
 // - g: print the shortest representation of a 64-bit floating point number between fixed and exponent lowercase form,
 // - G: print the shortest representation of a 64-bit floating point number between fixed and exponent uppercase form,
-// - a: print 64-bit or 32-bit floating point number in sign + mantissa + exponent lowercase hexadecimal form,
-// - A: print 64-bit or 32-bit floating point number in sign + mantissa + exponent uppercase hexadecimal form,
 // - t: print a Type or type information as a type. For other values, print the value's type.
 
 Fmt_Buffer :: struct
@@ -124,7 +122,7 @@ Fmt_Arg :: struct (Buffer_Type : Type)
 
 	Write_Func :: #type (buffer : *Buffer_Type, arg : This_Type) -> length : s64;
 
-	SPECIFIER_KEYS  :: "csBbidxXpPfeEgGaAt";
+	SPECIFIER_KEYS  :: "csBbidxXpPfeEgGt";
 	SPECIFIER_FUNCS :: Write_Func.[
 		#bake_constants write_char (T = Buffer_Type),
 		#bake_constants write_string (T = Buffer_Type),
@@ -141,8 +139,6 @@ Fmt_Arg :: struct (Buffer_Type : Type)
 		#bake_constants write_float_exp (T = Buffer_Type),
 		#bake_constants write_float_shortest (T = Buffer_Type),
 		#bake_constants write_float_shortest (T = Buffer_Type),
-		#bake_constants write_float_hex (T = Buffer_Type),
-		#bake_constants write_float_hex (T = Buffer_Type),
 		#bake_constants write_type (T = Buffer_Type)
 	];
 

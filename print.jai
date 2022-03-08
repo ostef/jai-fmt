@@ -1,5 +1,7 @@
 #scope_file
 
+jai :: #import "Compiler";
+
 Printer :: struct
 {
 	write_byte :: inline (printer : *Printer, byte : u8)
@@ -31,16 +33,20 @@ println :: inline (fmt_str : string, args : ..Any) -> length : s64
 	return result;
 }
 
-print :: inline (value : $T) -> length : s64
+print_var :: (var : Code) #expand
 {
-	printer : Printer;
+	name := #run (code : Code) -> string
+	{
+		root, ok := jai.compiler_get_nodes (code);
+		if !root || root.kind != .IDENT
+			return "";
+		ident := cast (*jai.Code_Ident) root;
 
-	return fmt_buffered (*printer, "%", value);
-}
+		return ident.name;
+	} (var);
 
-println :: inline (value : $T) -> length : s64
-{
-	printer : Printer;
-
-	return fmt_buffered (*printer, "%\n", value);
+	if name
+		println ("% = %", name, #insert var);
+	else
+		println ("%", #insert var);
 }

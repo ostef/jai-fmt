@@ -48,8 +48,6 @@ Valid precision values are positive or negative integer values, or a * character
 * `E`: print 64-bit floating point number in uppercase exponent form (uses Ryu d2exp conversion),
 * `g`: print the shortest representation of a 64-bit floating point number between fixed and exponent lowercase form,
 * `G`: print the shortest representation of a 64-bit floating point number between fixed and exponent uppercase form,
-* `a`: print 64-bit or 32-bit floating point number in sign + mantissa + exponent lowercase hexadecimal form,
-* `A`: print 64-bit or 32-bit floating point number in sign + mantissa + exponent uppercase hexadecimal form,
 * `t`: print a `Type` or type information as a type. For other values, print the value's type.
 
 ## Error cases:
