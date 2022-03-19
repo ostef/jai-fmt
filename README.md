@@ -93,7 +93,7 @@ The buffer type `T` has to be a struct that have at least one procedure inside w
 ```jai
 write_byte :: (buffer : *T, byte : u8)
 ```
-The rules of polymorphism allow `write_byte` to not be constant (not tested).  
+The rules of polymorphism allow `write_byte` to not be constant.  
 It is valid to call `write_byte` with a null `buffer`, in which case calling `write_byte` should be a no-op.
 
 # Additional formatting options
