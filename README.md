@@ -10,8 +10,7 @@ Ryu is the only module that gets imported by Fmt.
 Formatting arguments follow this pattern:  
 `{[arg_index][:[flags][width][.precision][specifier]]}`  
 If no specifier is present, the type information of the value is used to decide what to print. `%` can be used instead of empty curly braces.
-For aggregate types (arrays, structs), the formatting options are passed to the nested members all the way down.  
-> As of now, it is not possible to individually format struct members (we might do that with notes in the future).  
+For aggregate types (arrays, structs), the formatting options are passed to the nested members all the way down, unless the struct member has a Fmt note on it, specifying the formatting string.  
 
 ## Flags:
 * `<`: right justify. Ignored if width is not set. This is the default, and the flag has a value of 0; this exists just for consistency with `>`,
@@ -99,3 +98,5 @@ It is valid to call `write_byte` with a null `buffer`, in which case calling `wr
 # Additional formatting options
 * `@Fmt_Newline` note on struct members: if not nested, a newline will be printed after the member on which this note is on is printed.
 An example of printing a nested struct member might be when printing an array of a struct type. When this is the case, `@Fmt_Newline` is ignored.
+* `@Fmt(...)` note on struct members: instead of passing the formatting options to the member, the formatting string inside the parenthesis is used to format the struct member.  
+The formatting string in this case cannot have an argument index and as such should not contain `:` to separate the argument index with the formatting options. It also cannot have `*` instead of numbers for width and precision. If the parenthesis are not provided, the note is ignored.
