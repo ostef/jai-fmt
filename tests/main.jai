@@ -282,8 +282,8 @@ test_any :: () -> ko : s64
 	ko += test_print ("(s64, *s64, *Test_Enum, Test_Poly_Struct (Type, 500)) -> (bool, string)", "%", Test_Proc);
 
 
-	ko += test_print ("{ 0, 0 }", "%", Vec2f.{ 0, 0 });
-	ko += test_print ("{ 10, 0 }", "%", Vec2f.{ 10, 0 });
+	ko += test_print ("{       +0.000,       +0.000 }", "%", Vec2f.{ 0, 0 });
+	ko += test_print ("{      +10.000,       +0.000 }", "%", Vec2f.{ 10, 0 });
 	ko += test_print ("\n{ 1, 0, 0,\n  0, 1, 0,\n  0, 0, 1 }", "\n%", MAT3F_IDENTITY);
 
 	ko += test_print ("[ (6) 0, 1, 2, 3, 4, 5 ]", "%", s64.[ 0, 1, 2, 3, 4, 5 ]);
@@ -296,7 +296,7 @@ test_any :: () -> ko : s64
 	Basic.array_add (*array, Vec2f.{ 10, 0 });
 	Basic.array_add (*array, Vec2f.{ 1.234, 5.678 });
 
-	ko += test_print ("[ (..3) { 0, 0 }, { 10, 0 }, { 1.234, 5.678 } ]", "%", array);
+	ko += test_print ("[ (..3) {       +0.000,       +0.000 }, {      +10.000,       +0.000 }, {       +1.234,       +5.678 } ]", "%", array);
 
 	Basic.print ("%%, % KOs.\n", ko);
 	Basic.print ("============================\n");
@@ -344,7 +344,7 @@ test_struct :: inline () -> ko : s64
 	Basic.print ("Test struct:\n");
 	ko := 0;
 
-	ko += test_print ("{ 1.234, 5.6785 }", "{}", Vec2f.{ 1.234, 5.6785 });
+	ko += test_print ("{       +1.234,       +5.679 }", "{}", Vec2f.{ 1.234, 5.6785 });
 	ko += test_print ("{ 1.234, 5.678, 9.1011 }", "{}", Vec3f.{ 1.234, 5.678, 9.1011 });
 	ko += test_print ("\n{ 1, 0, 0,\n  0, 1, 0,\n  0, 0, 1 }", "\n{}", MAT3F_IDENTITY);
 	ko += test_print ("\n{ 001.000, 000.000, 000.000,\n  000.000, 001.000, 000.000,\n  000.000, 000.000, 001.000 }", "\n{:~07.3}", MAT3F_IDENTITY);
@@ -363,6 +363,18 @@ test_struct :: inline () -> ko : s64
 	
 	ko += test_print ("[ (2) { \"Foo\\nBar\\nBaz\", 0, 1.234 }, { \"Hello Sailor!\", 69105, 3.1415 } ]", "{}", Foo.[ .{ "Foo\nBar\nBaz", 0, 1.234 }, .{ "Hello Sailor!", 69105, 3.1415 } ]);
 	ko += test_print ("[ (2) { a : \"Foo\\nBar\\nBaz\", b : 0, c : 1.234 }, { a : \"Hello Sailor!\", b : 69105, c : 3.1415 } ]", "{:!}", Foo.[ .{ "Foo\nBar\nBaz", 0, 1.234 }, .{ "Hello Sailor!", 69105, 3.1415 } ]);
+	ko += test_print ("{     +123.457,       +0.000 }", "{}", Vec2f.{ cast (f32) 123.456789, 0 });
+	ko += test_print ("{     +123.000,     +456.000 }", "{}", Vec2i.{ 123, 456 });
+	ko += test_print ("{       +0.000,       +0.000 }", "{}", Vec2 (string).{ "Hello", "Sailor" });
+
+	Bar :: struct
+	{
+		a : string; @Fmt(123.456o)
+		b : int; @Fmt(123.456o)
+		c : float; @Fmt(123.456o)
+	}
+
+	ko += test_print ("{ a : (invalid specifier), b : (invalid specifier), c : (invalid specifier) }", "{:!}", Bar.{ "Bad specifier", 10, 10 });
 
 	Basic.print ("struct, % KOs.\n", ko);
 	Basic.print ("============================\n");
@@ -532,7 +544,7 @@ MAT3F_IDENTITY :: Mat3f.{
 
 Vec2 :: struct (T : Type)
 {
-	x, y : T;
+	x, y : T;	@Fmt(+~12.3f)
 
 	#place x;
 	w, h : T;

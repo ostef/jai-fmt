@@ -153,11 +153,12 @@ Fmt_Arg :: struct (Buffer_Type : Type)
 
 #scope_file
 
-FLAG_KEYS   :: "<>+ 0#~\\'$!";
+FLAG_KEYS   :: "<>+ _0#~\\'$!";
 FLAG_VALUES :: Fmt_Flags.[
 	.LEFT_JUSTIFY,
 	.RIGHT_JUSTIFY,
 	.FORCE_SIGN,
+	.ALIGN_SIGN,
 	.ALIGN_SIGN,
 	.PAD_WITH_ZEROES,
 	.PRINT_BASE,
@@ -195,6 +196,78 @@ copy_arg :: inline (
 	return result;
 }
 
+// @Cleanup (stefan): De-duplicate the code in read_member_arg and read_arg
+read_member_arg :: inline (
+	result : *Fmt_Arg ($T),
+	fmt_str : string,
+	ptr : *void,
+	type : *Type_Info
+) -> s64
+#modify { T = reject_non_buffer_types (T); }
+#no_abc
+{
+	result.value.value_pointer = ptr;
+	result.value.type = type;
+	len := fmt_str.count;
+	i := 0;
+	// Read optional flags
+	while i < len
+	{
+		found_flag := false;
+		for fi : 0..FLAG_KEYS.count - 1
+		{
+			if fmt_str[i] == FLAG_KEYS[fi]
+			{
+				result.flags |= FLAG_VALUES[fi];
+				found_flag = true;
+				i += 1;
+
+				break;
+			}
+		}
+		if !found_flag then break;
+	}
+	// Read optional width
+	if i < len && is_digit (fmt_str[i])
+	{
+		value, skip := string_to_u64 (advance (fmt_str, i));
+		i += skip;
+		result.width = cast (s64) value;
+	}
+	// Read optional precision
+	if i < len && fmt_str[i] == #char "."
+	{
+		i += 1;
+		result.precision = 0;
+		if i < fmt_str.count
+		{
+			value, skip := string_to_s64 (advance (fmt_str, i));
+			i += skip;
+			result.precision = value;
+		}
+	}
+	// Read optional specifier
+	if i < len
+	{
+		result.specifier = fmt_str[i];
+		i += 1;
+		// Get write function
+		for si : 0..result.SPECIFIER_KEYS.count - 1
+		{
+			if result.specifier == result.SPECIFIER_KEYS[si]
+			{
+				result.write_func = result.SPECIFIER_FUNCS[si];
+
+				break;
+			}
+		}
+	}
+	else
+		result.write_func = write_any;
+
+	return i;
+}
+
 read_arg :: inline (
 	result : *Fmt_Arg ($T),
 	fmt_str : string,
@@ -203,8 +276,8 @@ read_arg :: inline (
 ) ->
 	fmt_skip : s64 #must,
 	arg_skip : s64 #must
-#no_abc
 #modify { T = reject_non_buffer_types (T); }
+#no_abc
 {
 	arg_skip := 0;
 	i := 0;
@@ -311,22 +384,22 @@ read_arg :: inline (
 	{
 		result.specifier = fmt_str[i];
 		i += 1;
+		// Get write function
+		for si : 0..result.SPECIFIER_KEYS.count - 1
+		{
+			if result.specifier == result.SPECIFIER_KEYS[si]
+			{
+				result.write_func = result.SPECIFIER_FUNCS[si];
+
+				break;
+			}
+		}
 	}
 	else
 		result.write_func = write_any;
 	i = len;
 	if i < fmt_str.count
 		i += 1;
-	// Get write function
-	for si : 0..result.SPECIFIER_KEYS.count - 1
-	{
-		if result.specifier == result.SPECIFIER_KEYS[si]
-		{
-			result.write_func = result.SPECIFIER_FUNCS[si];
-
-			break;
-		}
-	}
 	// We read width and precision, so we set the arg_index here
 	// since we're sure the arg_skip won't change anymore.
 	if result.arg_index == -1

@@ -16,7 +16,7 @@ S64_MAX : s64 :  9_223_372_036_854_775_807;
 U64_MAX : u64 : 18_446_744_073_709_551_615;
 
 decimal_length :: inline (value : $T, $$base : u64 = 10) -> s64 #must
-	#no_context
+#no_context
 {
 	unsigned_value : u64;
 	if value < 0
@@ -54,20 +54,35 @@ make_string :: inline (data : *u8, count : s64) -> string #must
 	return result;
 }
 
+starts_with :: inline (str : string, with : string) -> bool #must
+#no_context
+#no_abc
+{
+	if str.count < with.count
+		return false;
+	for i : 0..with.count - 1
+	{
+		if str[i] != with[i]
+			return false;
+	}
+
+	return true;
+}
+
 is_digit :: inline (codepoint : u32) -> bool #must
-	#no_context
+#no_context
 {
 	return codepoint >= #char "0" && codepoint <= #char "9";
 }
 
 is_upper :: inline (codepoint : u32) -> bool #must
-	#no_context
+#no_context
 {
 	return codepoint >= #char "A" && codepoint <= #char "Z";
 }
 
 advance :: inline (val : string, count := 1) -> string #must
-	#no_context
+#no_context
 {
 	if count < 0 then count = 0;
 	if count > val.count then count = val.count;
@@ -80,13 +95,13 @@ advance :: inline (val : string, count := 1) -> string #must
 }
 
 flagged :: (val : $T, flag : T) -> bool #must
-	#expand
+#expand
 {
 	return (val & flag) == flag;
 }
 
 remove_flag :: (val : $T, flag : T) -> T #must
-	#expand
+#expand
 {
 	return val & ~flag;
 }
@@ -127,7 +142,7 @@ UNICODE_INVALID : u32 : 0xfffd;
 UNICODE_MAX     : u32 : 0x0010_ffff;
 
 utf8_encode :: inline (buffer : []u8, codepoint : u32) -> length : s64, written : s64
-	#no_abc
+#no_abc
 {
 	i := codepoint;
 	MASK : u8 : 0x3f;

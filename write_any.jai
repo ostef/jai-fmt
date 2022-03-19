@@ -102,8 +102,39 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 				index += write_string (buffer, it.name);
 				index += write_string (buffer, " : ");
 			}
+			found_fmt_note := false;
+			fmt_str := "";
+			for note : it.notes
+			{
+				if starts_with (note, "Fmt(") && note[note.count - 1] == #char ")"
+				{
+					found_fmt_note = true;
+					fmt_str = advance (note, "Fmt(".count);
+					fmt_str.count -= 1;
+
+					break note;
+				}
+			}
 			ptr := any.value_pointer + it.offset_in_bytes;
-			index += write_any (buffer, copy_arg (arg, ptr = ptr, type = it.type), is_nested = true);
+			member_arg : Fmt_Arg (T);
+			if found_fmt_note
+				read_member_arg (*member_arg, fmt_str, ptr, it.type);
+			else
+				member_arg = copy_arg (arg, ptr = ptr, type = it.type);
+			// @Cleanup @Note (stefan): Because we don't have an is_nested parameter
+			// in write_arg, we simulate nestedness by adding the SINGLE_LINE
+			// flag. The problem with that is for cases where nesting is not exactly
+			// the same as using SINGLE_LINE, the behaviour might not be correct.
+			// This is kind of a hack right now, but I don't know if we'll actually
+			// change this in the future. We used to call write_any, but the recent
+			// addition of Fmt() notes on struct members forces us to use write_arg
+			// instead, since write_any does not care about the specifier.
+			member_arg.flags |= .SINGLE_LINE;
+			member_arg.flags |= .QUOTED;	// See above
+			if !member_arg.write_func
+				index += write_string (buffer, "(invalid specifier)");
+			else
+				index += write_arg (buffer, member_arg);
 			newline = !flagged (arg.flags, .SINGLE_LINE) && !is_nested && find_first_occurence (it.notes, "Fmt_Newline") != -1;
 			highest_offset = it.offset_in_bytes;
 		}
