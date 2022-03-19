@@ -98,5 +98,5 @@ It is valid to call `write_byte` with a null `buffer`, in which case calling `wr
 # Additional formatting options
 * `@Fmt_Newline` note on struct members: if not nested, a newline will be printed after the member on which this note is on is printed.
 An example of printing a nested struct member might be when printing an array of a struct type. When this is the case, `@Fmt_Newline` is ignored.
-* `@Fmt(...)` note on struct members: instead of passing the formatting options to the member, the formatting string inside the parenthesis is used to format the struct member.  
-The formatting string in this case cannot have an argument index and as such should not contain `:` to separate the argument index with the formatting options. It also cannot have `*` instead of numbers for width and precision. If the parenthesis are not provided, the note is ignored.
+* `@Fmt(...)` note on struct members: instead of passing the formatting options to the member, the formatting string inside the parentheses is used to format the struct member.  
+The formatting string in this case cannot have an argument index and as such should not contain `:` to separate the argument index with the formatting options. It also cannot have `*` instead of numbers for width and precision. If the parentheses are not provided, the note is ignored.
