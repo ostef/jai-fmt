@@ -2,8 +2,6 @@
 
 #assert PRINTER_BUFFER_SIZE > 0 "Invalid PRINTER_BUFFER_SIZE. Must be positive and non zero.";
 
-jai :: #import "Compiler";
-
 Printer :: struct
 {
 	buffer : [PRINTER_BUFFER_SIZE]u8;
