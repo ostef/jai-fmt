@@ -479,8 +479,8 @@ write_arg :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64 #must
 	return i;
 }
 
-fmt_buffered :: format_buffered;
-format_buffered :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> length : s64
+fmt :: format;
+format :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> length : s64
 #modify { T = reject_non_buffer_types (T); }
 {
 	buffer_index := 0;
@@ -534,17 +534,16 @@ format_buffered :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> leng
 	return buffer_index;
 }
 
-fmt :: format;
 format :: inline (allocator : Allocator, fmt_str : string, args : ..Any) -> string #must
 {
 	buffer : Fmt_Buffer;
-	buffer.capacity = format_buffered (cast (*Fmt_Buffer) null, fmt_str, ..args);
+	buffer.capacity = format (cast (*Fmt_Buffer) null, fmt_str, ..args);
 	if buffer.capacity == 0
 		return "";
 	buffer.data  = cast (*u8) allocator.proc (.ALLOCATE, buffer.capacity, 0, null, allocator.data);
 	str : string = ---;
 	str.data = buffer.data;
-	str.count = format_buffered (*buffer, fmt_str, ..args);
+	str.count = format (*buffer, fmt_str, ..args);
 
 	return str;
 }

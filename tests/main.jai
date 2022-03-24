@@ -28,7 +28,7 @@ test_print :: (expected : string, fmt_str : string, args : ..Any, location := #c
 		{
 			fmt_buff := make_fmt_buffer (buff);
 			start := Basic.get_time ();
-			len := fmt_buffered (*fmt_buff, fmt_str, ..args);
+			len := fmt (*fmt_buff, fmt_str, ..args);
 			end := Basic.get_time ();
 			total_time += (end - start) * 1000;
 		}

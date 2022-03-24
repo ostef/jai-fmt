@@ -22,7 +22,7 @@ print :: inline (fmt_str : string, args : ..Any) -> length : s64
 {
 	printer : Printer;
 
-	return fmt_buffered (*printer, fmt_str, ..args);
+	return fmt (*printer, fmt_str, ..args);
 }
 
 println :: inline (fmt_str : string, args : ..Any) -> length : s64
@@ -33,20 +33,12 @@ println :: inline (fmt_str : string, args : ..Any) -> length : s64
 	return result;
 }
 
-print_var :: (var : Code) #expand
+print :: inline (val : Any) -> length : s64
 {
-	name := #run (code : Code) -> string
-	{
-		root, ok := jai.compiler_get_nodes (code);
-		if !root || root.kind != .IDENT
-			return "";
-		ident := cast (*jai.Code_Ident) root;
+	return print ("%", val);
+}
 
-		return ident.name;
-	} (var);
-
-	if name
-		println ("% = %", name, #insert var);
-	else
-		println ("%", #insert var);
+println :: inline (val : Any) -> length : s64
+{
+	return println ("%", val);
 }

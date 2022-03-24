@@ -15,13 +15,13 @@ For aggregate types (arrays, structs), the formatting options are passed to the 
 ## Flags:
 * `<`: right justify. Ignored if width is not set. This is the default, and the flag has a value of 0; this exists just for consistency with `>`,
 * `>`: left justify. Ignored if width is not set,
-* `+`: print a '+' in front of positive signed integer values,
-* `' '`: align signed integers, printing a ' ' in front of positive values,
+* `+`: print a '+' in front of positive signed integer and float values,
+* `' '`: align signed integers and floats, printing a ' ' in front of positive values,
 * `0`: pad integer and float values with '0' instead of ' ', ignored if `>` is set,
 * `#`: print the base prefix for integer values, '0x' or '0X' for hex, '0b' for binary,
 * `~`: for fixed and exponent form floating point numbers, leave trailing zeroes after decimal point. By default, trailing zeroes are trimmed,
 * `\\`: print escape sequences for non printable characters,
-* `'`: print surrounding single quotes for characters, double quotes for strings,
+* `'`: same as `\\`, but also print surrounding single quotes for characters, double quotes for strings,
 * `$`: print on one line, for strings and characters, this is the same as the `\\` flag,
 * `!`: print struct member names
 
@@ -58,11 +58,10 @@ Valid precision values are positive or negative integer values, or a * character
 
 These are the main procedures:
 ```jai
-fmt_buffered :: format_buffered;
-format_buffered :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> length : s64
+fmt :: format;
+format :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> length : s64
 ```
 ```jai
-fmt :: format;
 format :: inline (allocator : Allocator, fmt_str : string, args : ..Any) -> string #must
 ```
 ```jai
@@ -72,22 +71,22 @@ print :: inline (fmt_str : string, args : ..Any) -> length : s64
 println :: inline (fmt_str : string, args : ..Any) -> length : s64
 ```
 ```jai
-print :: inline (value : $T) -> length : s64
+print :: inline (val : Any) -> length : s64
 ```
 ```jai
-println :: inline (value : $T) -> length : s64
+println :: inline (val : Any) -> length : s64
 ```
 
 The return value of these functions is the number of UTF-8 units (bytes) needed for the final string, not the actual number of bytes that have been written.
 
-Calling `format_buffered` with a null buffer is valid, and it effectively computes the final length of the resulting UTF-8 string. The type `T` cannot be void though, so if you want to pass null, cast it to a valid buffer type pointer, like `Fmt_Buffer`.
+Calling `format` with a null buffer is valid, and it effectively computes the final length of the resulting UTF-8 string. The type `T` cannot be void though, so if you want to pass null, cast it to a valid buffer type pointer, like `Fmt_Buffer`.
 
-The procedures that write to a buffer are at export scope, so you can use them without having to call `format` or `format_buffered`. Same for parsing a format, and writing an argument with field width handling (`write_arg`).
+The procedures that write to a buffer are at export scope, so you can use them without having to call `format`. Same for parsing a format string, and writing an argument with field width handling (`write_arg`).
 
 # Extensibility
-`format_buffered` accepts a polymorphic buffer as argument.
+`format` accepts a polymorphic buffer as argument.
 This makes it possible, for example, to directly print the characters to the desired output instead of allocating a temporary buffer and writing to it (see printing functions in `print.jai`).
-This also allows the caller to use a dynamically growing buffer instead of computing the final length of the string by calling `format_buffered` with a null buffer and then allocating a buffer of sufficient size like in the `format` procedure.
+This also allows the caller to use a dynamically growing buffer instead of computing the final length of the string by calling `format` with a null buffer and then allocating a buffer of sufficient size like in the non-buffered `format` procedure.
 The buffer type `T` has to be a struct that have at least one procedure inside with the following name and signature:
 ```jai
 write_byte :: (buffer : *T, byte : u8)

@@ -1,3 +1,3 @@
 @echo off
 
-jai main.jai -no_dce -import_dir ../../
+jai main.jai -import_dir ../../
