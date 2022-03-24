@@ -13,13 +13,13 @@ test_print :: (expected : string, fmt_str : string, args : ..Any, location := #c
 	str := fmt (context.allocator, fmt_str, ..args);
 	if str != expected
 	{
-		Basic.print ("[Ln %]: Expected '%', got '%'.\n", location.line_number, expected, str);
-		Basic.print ("fmt_str was: '%'.\n", fmt_str);
-		Basic.print ("[Ln %]: KO.\n", location.line_number);
+		println ("[Ln %]: Expected '%', got '%'.", location.line_number, expected, str);
+		println ("fmt_str was: '%'.", fmt_str);
+		println ("[Ln %]: KO.", location.line_number);
 
 		return 1;
 	}
-	Basic.print ("[Ln %]: OK.\n", location.line_number);
+	println ("[Ln %]: OK.", location.line_number);
 	if profile
 	{
 		buff : [1024]u8 = ---;
@@ -32,7 +32,7 @@ test_print :: (expected : string, fmt_str : string, args : ..Any, location := #c
 			end := Basic.get_time ();
 			total_time += (end - start) * 1000;
 		}
-		Basic.print ("[Ln %]: Average time: % ms. fmt_str was '%'.\n", location.line_number, total_time / PROFILE_COUNT, fmt_str);
+		println ("[Ln %]: Average time: % ms. fmt_str was '%'.", location.line_number, total_time / PROFILE_COUNT, fmt_str);
 	}
 
 	return 0;
@@ -40,7 +40,7 @@ test_print :: (expected : string, fmt_str : string, args : ..Any, location := #c
 
 test_string :: () -> ko : s64
 {
-	Basic.print ("Test %%s:\n");
+	println ("Test :s");
 	ko := 0;
 	ko += test_print ("(null)", "{:s}", "");
 	ko += test_print ("    (null)", "{:10s}", "");
@@ -60,15 +60,15 @@ test_string :: () -> ko : s64
 	ko += test_print ("é", "{:c}", #char "é");
 	ko += test_print ("⺠", "{:c}", #char "⺠");
 	ko += test_print ("'⺠'", "{:'c}", #char "⺠");
-	Basic.print ("%%s, % KOs.\n", ko);
-	Basic.print ("============================\n");
+	println ("% KOs.", ko);
+	println ("============================");
 
 	return ko;
 }
 
 test_decimal :: () -> ko : s64
 {
-	Basic.print ("Test %%i:\n");
+	print ("Test :i");
 	ko := 0;
 	ko += test_print ("0", "{:i}", 0);
 	ko += test_print ("10", "{:i}", 10);
@@ -95,15 +95,15 @@ test_decimal :: () -> ko : s64
 	ko += test_print (" 10", "{: i}", 10);
 	ko += test_print ("-10", "{:+i}", -10);
 	ko += test_print ("10", "{:i}", Test_Enum.C);
-	Basic.print ("%%% KOs.\n", ko);
-	Basic.print ("============================\n");
+	println ("% KOs.", ko);
+	println ("============================");
 
 	return ko;
 }
 
 test_binary :: () -> ko : s64
 {
-	Basic.print ("Test %%b:\n");
+	println ("Test :b");
 	ko := 0;
 	ko += test_print ("0", "{:b}", 0);
 	ko += test_print ("101010", "{:b}", 0b101010);
@@ -121,15 +121,15 @@ test_binary :: () -> ko : s64
 	ko += test_print ("0b00011001", "{:#10.8b}", 0b11001);
 	ko += test_print ("      0b00011001", "{:#16.8b}", 0b11001);
 	ko += test_print ("0b00011001", "{:#016.8b}", 0b11001);
-	Basic.print ("%%b, % KOs.\n", ko);
-	Basic.print ("============================\n");
+	println ("% KOs.", ko);
+	println ("============================");
 
 	return ko;
 }
 
 test_hexadecimal :: () -> ko : s64
 {
-	Basic.print ("Test %%x:\n");
+	println ("Test :x");
 	ko := 0;
 	ko += test_print ("0", "{:x}", 0);
 	ko += test_print ("badbeef", "{:x}", 0xbadbeef);
@@ -150,15 +150,15 @@ test_hexadecimal :: () -> ko : s64
 	ko += test_print ("1", "{:x}", Test_Flags.A);
 	ko += test_print ("null", "{:p}", 0);
 	ko += test_print ("0x1234", "{:p}", cast (*void) 0x1234);
-	Basic.print ("%%x, % KOs.\n", ko);
-	Basic.print ("============================\n");
+	println ("% KOs.", ko);
+	println ("============================");
 
 	return ko;
 }
 
 test_float_fixed :: () -> s64
 {
-	Basic.print ("Test %%f:\n");
+	println ("Test :f");
 	ko := 0;
 	ko += test_print ("1.234", "{:f}", 1.234);
 	ko += test_print ("1.234", "{:.3f}", 1.234);
@@ -182,15 +182,15 @@ test_float_fixed :: () -> s64
 	ko += test_print ("-Inf", "{:f}", F64_NEGATIVE_INFINITY);
 	ko += test_print ("   NaN", "{:6f}", F32_NAN);
 	ko += test_print ("   NaN", "{:06f}", F32_NAN);
-	Basic.print ("%%f, % KOs.\n", ko);
-	Basic.print ("============================\n");
+	println ("% KOs.", ko);
+	println ("============================");
 
 	return ko;
 }
 
 test_float_exp :: () -> s64
 {
-	Basic.print ("Test %%e:\n");
+	println ("Test :e");
 	ko := 0;
 	ko += test_print ("0e+00", "{:e}", 0.0);
 	ko += test_print ("-0e+00", "{:e}", -0.0);
@@ -220,15 +220,15 @@ test_float_exp :: () -> s64
 	ko += test_print ("-Inf", "{:e}", F64_NEGATIVE_INFINITY);
 	ko += test_print ("   NaN", "{:6e}", F32_NAN);
 	ko += test_print ("   NaN", "{:06e}", F32_NAN);
-	Basic.print ("%%e, % KOs.\n", ko);
-	Basic.print ("============================\n");
+	println ("% KOs.", ko);
+	println ("============================");
 
 	return ko;
 }
 
 test_arg_index :: () -> ko : s64
 {
-	Basic.print ("Test arg index:\n");
+	println ("Test arg index");
 	ko := 0;
 	ko += test_print ("0", "{0}", 0);
 	ko += test_print ("(no argument provided)", "{10}", 0);
@@ -236,15 +236,15 @@ test_arg_index :: () -> ko : s64
 	ko += test_print ("2", "{2}", 0, 1, 2, 3);
 	ko += test_print ("+0002", "{2:+0*d}", 5, 1, 2, 3);
 	ko += test_print ("+0002 1", "{2:+0*d} {:d}", 5, 1, 2, 3);
-	Basic.print ("arg index, % KOs.\n", ko);
-	Basic.print ("============================\n");
+	println ("% KOs.", ko);
+	println ("============================");
 
 	return ko;
 }
 
 test_any :: () -> ko : s64
 {
-	Basic.print ("Test %%:\n");
+	println ("Test any");
 	ko := 0;
 	ko += test_print ("0", "%", 0);
 	ko += test_print ("(no argument provided)", "%");
@@ -298,15 +298,15 @@ test_any :: () -> ko : s64
 
 	ko += test_print ("[ (..3) {       +0.000,       +0.000 }, {      +10.000,       +0.000 }, {       +1.234,       +5.678 } ]", "%", array);
 
-	Basic.print ("%%, % KOs.\n", ko);
-	Basic.print ("============================\n");
+	println ("% KOs.", ko);
+	println ("============================");
 
 	return ko;
 }
 
 test_other :: () -> ko : s64
 {
-	Basic.print ("Test other:\n");
+	println ("Test other");
 	ko := 0;
 	ko += test_print ("%", "%%");
 	ko += test_print ("{", "{{");
@@ -333,15 +333,15 @@ test_other :: () -> ko : s64
 	ko += test_print ("s64", "{:t}", 10);
 	ko += test_print ("string", "{:t}", "Hello Sailor");
 	ko += test_print ("*u8", "{:t}", "Hello Sailor".data);
-	Basic.print ("other, % KOs.\n", ko);
-	Basic.print ("============================\n");
+	println ("% KOs.", ko);
+	println ("============================");
 
 	return ko;
 }
 
 test_struct :: inline () -> ko : s64
 {
-	Basic.print ("Test struct:\n");
+	println ("Test struct");
 	ko := 0;
 
 	ko += test_print ("{       +1.234,       +5.679 }", "{}", Vec2f.{ 1.234, 5.6785 });
@@ -376,8 +376,8 @@ test_struct :: inline () -> ko : s64
 
 	ko += test_print ("{ a : (invalid specifier), b : (invalid specifier), c : (invalid specifier) }", "{:!}", Bar.{ "Bad specifier", 10, 10 });
 
-	Basic.print ("struct, % KOs.\n", ko);
-	Basic.print ("============================\n");
+	println ("% KOs.", ko);
+	println ("============================");
 
 	return ko;
 }
@@ -434,7 +434,7 @@ main :: ()
 	//str := fmt (context.allocator, "Hello Sailor!\n{:}\n{:10.3f}\n", MAT3F_IDENTITY, 1.234);
 	//if len1 != str.count
 	//	Basic.print ("print returned a length of %, but % was expected.\n", len1, str.count);
-	Basic.print (" %/% tests SUCCESSFUL,\n % FAILURES.\n", total_tests - ko, total_tests, ko);
+	println (" %/% tests SUCCESSFUL,\n % FAILURES.", total_tests - ko, total_tests, ko);
 
 	//a_var := 10;
 	//print_var (a_var);

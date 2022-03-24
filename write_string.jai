@@ -17,6 +17,10 @@ write_char :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 write_byte :: inline (buffer : *$T, byte : u8) -> length : s64
 #modify { T = reject_non_buffer_types (T); }
 {
+	// We send 0 to buffer.write_byte to indicate the end of the
+	// string, so here we filter out 0s.
+	if byte == 0
+		return 0;
 	buffer.write_byte (buffer, byte);
 
 	return 1;

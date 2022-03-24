@@ -1,17 +1,31 @@
 #scope_file
 
+#assert PRINTER_BUFFER_SIZE > 0 "Invalid PRINTER_BUFFER_SIZE. Must be positive and non zero.";
+
 jai :: #import "Compiler";
 
 Printer :: struct
 {
-	write_byte :: inline (printer : *Printer, byte : u8)
+	buffer : [PRINTER_BUFFER_SIZE]u8;
+	count  : s64;
+
+	write_byte :: inline (using printer : *Printer, byte : u8)
 	{
 		if printer
 		{
-			str : string = ---;
-			str.data  = *byte;
-			str.count = 1;
-			write_string (str);
+			if byte == 0 || count == PRINTER_BUFFER_SIZE
+			{
+				str : string = ---;
+				str.data  = buffer.data;
+				str.count = count;
+				write_string (str);
+				count = 0;
+			}
+			if byte
+			{
+				buffer[count] = byte;
+				count += 1;
+			}
 		}
 	}
 }

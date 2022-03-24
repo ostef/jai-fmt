@@ -1,3 +1,5 @@
+#module_parameters (PRINTER_BUFFER_SIZE := 1024);
+
 #load "utils.jai";
 #load "any.jai";
 #load "print.jai";
@@ -41,7 +43,7 @@ Fmt_Buffer :: struct
 {
 	write_byte :: inline (buffer : *Fmt_Buffer, byte : u8)
 	{
-		if buffer && buffer.count < buffer.capacity
+		if byte != 0 && buffer && buffer.count < buffer.capacity
 		{
 			buffer.data[buffer.count] = byte;
 			buffer.count += 1;
@@ -530,6 +532,8 @@ format :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> length : s64
 		buffer_index += write_byte (buffer, fmt_str[fmt_index]);
 		fmt_index    += 1;
 	}
+	// Indicate to the buffer that the end of the string has been reached, and it should flush if necessary
+	buffer.write_byte (buffer, 0);
 
 	return buffer_index;
 }
