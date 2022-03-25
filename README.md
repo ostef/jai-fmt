@@ -13,11 +13,11 @@ If no specifier is present, the type information of the value is used to decide 
 For aggregate types (arrays, structs), the formatting options are passed to the nested members all the way down, unless the struct member has a Fmt note on it, specifying the formatting string.  
 
 ## Flags:
-* `<`: right justify. Ignored if width is not set. This is the default, and the flag has a value of 0; this exists just for consistency with `>`,
-* `>`: left justify. Ignored if width is not set,
+* `>`: right justify. Ignored if width is not set. This is the default, and the flag has a value of 0; this exists just for consistency with `<`,
+* `<`: left justify. Ignored if width is not set,
 * `+`: print a '+' in front of positive signed integer and float values,
 * `' '`: align signed integers and floats, printing a ' ' in front of positive values,
-* `0`: pad integer and float values with '0' instead of ' ', ignored if `>` is set,
+* `0`: pad integer and float values with '0' instead of ' ', ignored if `<` is set,
 * `#`: print the base prefix for integer values, '0x' or '0X' for hex, '0b' for binary,
 * `~`: for fixed and exponent form floating point numbers, leave trailing zeroes after decimal point. By default, trailing zeroes are trimmed,
 * `\\`: print escape sequences for non printable characters,
