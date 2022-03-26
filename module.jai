@@ -118,31 +118,54 @@ Fmt_Flags :: enum_flags
 	PRINT_MEMBER_NAMES     :: 0x200;	// Print struct member names
 }
 
+// @Note (stefan): All of the things in the Fmt_Specifiers struct used
+// to be in Fmt_Arg, but the new Jai beta 0.1.014 make it not possible
+// to use #bake on overloaded procedures without using #procedure_of_call
+// first. The thing is, #procedure_of_call takes the desired arguments,
+// which are a Buffer and an Fmt_Arg, meaning we need to make a literal
+// for Fmt_Arg, which we can't do in Fmt_Arg itself because it would
+// create a circular dependency. Why does 
+Fmt_Specifiers :: struct (Buffer_Type : Type)
+{
+	Write_Func :: #type (buffer : *Buffer_Type, arg : Fmt_Arg (Buffer_Type)) -> length : s64;
+
+	spec_char :: #procedure_of_call write_char (cast (*Buffer_Type) null, Fmt_Arg (Buffer_Type).{});
+	spec_string :: #procedure_of_call write_string (cast (*Buffer_Type) null, Fmt_Arg (Buffer_Type).{});
+	spec_bool :: #procedure_of_call write_bool (cast (*Buffer_Type) null, Fmt_Arg (Buffer_Type).{});
+	spec_binary :: #procedure_of_call write_binary (cast (*Buffer_Type) null, Fmt_Arg (Buffer_Type).{});
+	spec_decimal :: #procedure_of_call write_decimal (cast (*Buffer_Type) null, Fmt_Arg (Buffer_Type).{});
+	spec_hexadecimal :: #procedure_of_call write_hexadecimal (cast (*Buffer_Type) null, Fmt_Arg (Buffer_Type).{});
+	spec_pointer :: #procedure_of_call write_pointer (cast (*Buffer_Type) null, Fmt_Arg (Buffer_Type).{});
+	spec_float_fixed :: #procedure_of_call write_float_fixed (cast (*Buffer_Type) null, Fmt_Arg (Buffer_Type).{});
+	spec_float_exp :: #procedure_of_call write_float_exp (cast (*Buffer_Type) null, Fmt_Arg (Buffer_Type).{});
+	spec_float_shortest :: #procedure_of_call write_float_shortest (cast (*Buffer_Type) null, Fmt_Arg (Buffer_Type).{});
+	spec_type :: #procedure_of_call write_type (cast (*Buffer_Type) null, Fmt_Arg (Buffer_Type).{});
+
+	KEYS  :: "csBbidxXpPfeEgGt";
+	FUNCS :: Write_Func.[
+		spec_char,
+		spec_string,
+		spec_bool,
+		spec_binary,
+		spec_decimal,
+		spec_decimal,
+		spec_hexadecimal,
+		spec_hexadecimal,
+		spec_pointer,
+		spec_pointer,
+		spec_float_fixed,
+		spec_float_exp,
+		spec_float_exp,
+		spec_float_shortest,
+		spec_float_shortest,
+		spec_type
+	];
+}
+
 Fmt_Arg :: struct (Buffer_Type : Type)
 {
-	This_Type :: #this;
-
-	Write_Func :: #type (buffer : *Buffer_Type, arg : This_Type) -> length : s64;
-
-	SPECIFIER_KEYS  :: "csBbidxXpPfeEgGt";
-	SPECIFIER_FUNCS :: Write_Func.[
-		#bake_constants write_char (T = Buffer_Type),
-		#bake_constants write_string (T = Buffer_Type),
-		#bake_constants write_bool (T = Buffer_Type),
-		#bake_constants write_binary (T = Buffer_Type),
-		#bake_constants write_decimal (T = Buffer_Type),
-		#bake_constants write_decimal (T = Buffer_Type),
-		#bake_constants write_hexadecimal (T = Buffer_Type),
-		#bake_constants write_hexadecimal (T = Buffer_Type),
-		#bake_constants write_pointer (T = Buffer_Type),
-		#bake_constants write_pointer (T = Buffer_Type),
-		#bake_constants write_float_fixed (T = Buffer_Type),
-		#bake_constants write_float_exp (T = Buffer_Type),
-		#bake_constants write_float_exp (T = Buffer_Type),
-		#bake_constants write_float_shortest (T = Buffer_Type),
-		#bake_constants write_float_shortest (T = Buffer_Type),
-		#bake_constants write_type (T = Buffer_Type)
-	];
+	Specifiers :: Fmt_Specifiers (Buffer_Type);
+	Write_Func :: Specifiers.Write_Func;
 
 	arg_index  := -1;
 	flags      : Fmt_Flags;
@@ -254,11 +277,11 @@ read_member_arg :: inline (
 		result.specifier = fmt_str[i];
 		i += 1;
 		// Get write function
-		for si : 0..result.SPECIFIER_KEYS.count - 1
+		for si : 0..result.Specifiers.KEYS.count - 1
 		{
-			if result.specifier == result.SPECIFIER_KEYS[si]
+			if result.specifier == result.Specifiers.KEYS[si]
 			{
-				result.write_func = result.SPECIFIER_FUNCS[si];
+				result.write_func = result.Specifiers.FUNCS[si];
 
 				break;
 			}
@@ -387,11 +410,11 @@ read_arg :: inline (
 		result.specifier = fmt_str[i];
 		i += 1;
 		// Get write function
-		for si : 0..result.SPECIFIER_KEYS.count - 1
+		for si : 0..result.Specifiers.KEYS.count - 1
 		{
-			if result.specifier == result.SPECIFIER_KEYS[si]
+			if result.specifier == result.Specifiers.KEYS[si]
 			{
-				result.write_func = result.SPECIFIER_FUNCS[si];
+				result.write_func = result.Specifiers.FUNCS[si];
 
 				break;
 			}
@@ -431,11 +454,11 @@ write_arg_to_temp_buffer :: inline (buffer : []u8, arg : Fmt_Arg ($T)) -> length
 	if temp_arg.specifier
 	{
 		// Get write function from the specifier, since we can't interchange write funcs of different types.
-		for si : 0..temp_arg.SPECIFIER_KEYS.count - 1
+		for si : 0..temp_arg.Specifiers.KEYS.count - 1
 		{
-			if temp_arg.specifier == temp_arg.SPECIFIER_KEYS[si]
+			if temp_arg.specifier == temp_arg.Specifiers.KEYS[si]
 			{
-				temp_arg.write_func = temp_arg.SPECIFIER_FUNCS[si];
+				temp_arg.write_func = temp_arg.Specifiers.FUNCS[si];
 
 				break;
 			}
