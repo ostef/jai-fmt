@@ -1,5 +1,5 @@
 write_char :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
-#modify { T = reject_non_buffer_types (T); }
+#modify { reject_non_buffer_types (T); }
 {
 	index := 0;
 	if flagged (arg.flags, .QUOTED)
@@ -15,7 +15,7 @@ write_char :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 }
 
 write_byte :: inline (buffer : *$T, byte : u8) -> length : s64
-#modify { T = reject_non_buffer_types (T); }
+#modify { reject_non_buffer_types (T); }
 {
 	// We send 0 to buffer.write_byte to indicate the end of the
 	// string, so here we filter out 0s.
@@ -27,7 +27,7 @@ write_byte :: inline (buffer : *$T, byte : u8) -> length : s64
 }
 
 write_char :: inline (buffer : *$T, codepoint : u32) -> length : s64
-#modify { T = reject_non_buffer_types (T); }
+#modify { reject_non_buffer_types (T); }
 {
 	utf8_sequence : [4]u8 = ---;
 	utf8_length := utf8_encode (utf8_sequence, codepoint);
@@ -38,7 +38,7 @@ write_char :: inline (buffer : *$T, codepoint : u32) -> length : s64
 }
 
 write_char_escaped :: inline (buffer : *$T, codepoint : u32) -> length : s64
-#modify { T = reject_non_buffer_types (T); }
+#modify { reject_non_buffer_types (T); }
 {
 	if codepoint ==
 	{
@@ -66,7 +66,7 @@ write_char_escaped :: inline (buffer : *$T, codepoint : u32) -> length : s64
 }
 
 write_chars :: inline (buffer : *$T, codepoint : u32, count : s64) -> length : s64
-#modify { T = reject_non_buffer_types (T); }
+#modify { reject_non_buffer_types (T); }
 {
 	if count <= 0
 		return 0;
@@ -78,7 +78,7 @@ write_chars :: inline (buffer : *$T, codepoint : u32, count : s64) -> length : s
 }
 
 write_string :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
-#modify { T = reject_non_buffer_types (T); }
+#modify { reject_non_buffer_types (T); }
 {
 	str := any_to_string (arg.value);
 	if !str.data && !flagged (arg.flags, .QUOTED)
@@ -100,7 +100,7 @@ write_string :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 // @Note (stefan): Strings are UTF-8, so we directly print byte per byte instead of calling
 // write_char, which would convert from UTF-8 to UTF-8 and give invalid results.
 write_string :: inline (buffer : *$T, str : string, max_length := -1) -> length : s64
-#modify { T = reject_non_buffer_types (T); }
+#modify { reject_non_buffer_types (T); }
 {
 	length := str.count;
 	if max_length >= 0 && length > max_length
@@ -112,7 +112,7 @@ write_string :: inline (buffer : *$T, str : string, max_length := -1) -> length 
 }
 
 write_string_escaped :: inline (buffer : *$T, str : string, max_length := -1) -> length : s64
-#modify { T = reject_non_buffer_types (T); }
+#modify { reject_non_buffer_types (T); }
 {
 	if max_length < 0 then max_length = str.count;
 	length := 0;

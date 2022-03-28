@@ -16,7 +16,7 @@ ryu :: #import "Ryu" (IMPORT_FLOAT_TO_SHORTEST = false, IMPORT_STRING_TO_FLOAT =
 // worry about whether the buffer is big enough for arbitrary precision values.
 
 write_f64 :: inline (buffer : *$T, value : f64, precision : u32 = 6) -> length : s64
-#modify { T = reject_non_buffer_types (T); }
+#modify { reject_non_buffer_types (T); }
 {
 	if precision > 16
 		precision = 16;
@@ -45,7 +45,7 @@ write_f64 :: inline (buffer : *$T, value : f64, precision : u32 = 6) -> length :
 }
 
 write_float_fixed :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
-#modify { T = reject_non_buffer_types (T); }
+#modify { reject_non_buffer_types (T); }
 {
 	ryu_fmt : ryu.Format;
 	if flagged (arg.flags, .PAD_WITH_ZEROES) && !flagged (arg.flags, .LEFT_JUSTIFY) && arg.width > 0
@@ -72,7 +72,7 @@ write_float_fixed :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 }
 
 write_float_exp :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
-#modify { T = reject_non_buffer_types (T); }
+#modify { reject_non_buffer_types (T); }
 {
 	ryu_fmt : ryu.Format;
 	if flagged (arg.flags, .PAD_WITH_ZEROES) && !flagged (arg.flags, .LEFT_JUSTIFY) && arg.width > 0
@@ -101,7 +101,7 @@ write_float_exp :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 }
 
 write_float_shortest :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
-#modify { T = reject_non_buffer_types (T); }
+#modify { reject_non_buffer_types (T); }
 {
 	ryu_fmt : ryu.Format;
 	if flagged (arg.flags, .PAD_WITH_ZEROES) && !flagged (arg.flags, .LEFT_JUSTIFY) && arg.width > 0
