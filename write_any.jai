@@ -158,6 +158,8 @@ write_type :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> length : s64
 #modify { reject_non_buffer_types (T); }
 {
+	if !info
+		return write_string (buffer, "null");
 	if #complete info.type ==
 	{
 	case .VOID;
