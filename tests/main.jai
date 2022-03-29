@@ -369,14 +369,19 @@ test_struct :: inline () -> ko : s64
 
 	Bar :: struct
 	{
-		z : int; @Fmt_Ignore
-		a : string; @Fmt(123.456o
-		b : int; @Fmt(123.456o)
-		c : int; @Fmt_Ignore
-		d : float; @Fmt(123.456o)
+		z : int;	@Fmt_Ignore
+		a : string;	@Fmt(123.456o
+		b : int;	@Fmt(123.456o)
+		c : int;	@Fmt_Ignore
+		d : float;	@Fmt(123.456o)
+		e : *Foo;	@Fmt_Follow_Ptr
 	}
 
-	ko += test_print ("{ a : (unclosed Fmt note), b : (invalid specifier), d : (invalid specifier) }", "{:!}", Bar.{ 5, "Bad specifier", 10, 11, 12 });
+	a_foo := Foo.{ "Foo\nBar\nBaz", 0, 1.234 };
+	a_bar := Bar.{ 5, "Bad specifier", 10, 11, 12, null };
+	ko += test_print ("{ a : (unclosed Fmt note), b : (invalid specifier), d : (invalid specifier), e : null }", "{:!}", a_bar);
+	a_bar.e = *a_foo;
+	ko += test_print ("{ (unclosed Fmt note), (invalid specifier), (invalid specifier), { \"Foo\\nBar\\nBaz\", 0, 1.234 } }", "%", a_bar);
 
 	Baz :: struct
 	{

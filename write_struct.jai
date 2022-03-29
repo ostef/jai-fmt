@@ -1,3 +1,23 @@
+#scope_file
+
+follow_pointer :: inline (ptr : *void, info : *Type_Info) -> *void, *Type_Info
+{
+	if info.type != .POINTER
+		return ptr, info;
+	info_ptr := cast (*Type_Info_Pointer) info;
+	new_ptr : *void;
+	if info_ptr.relative_pointer_size
+		new_ptr = relative_to_absolute_ptr (ptr, info_ptr.relative_pointer_size);
+	else
+		new_ptr = <<cast (**void) ptr;
+	if new_ptr
+		return new_ptr, info_ptr.pointer_to;
+
+	return ptr, info;
+}
+
+#scope_export
+
 write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 #modify { reject_non_buffer_types (T); }
 {
@@ -12,6 +32,7 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 		unclosed_format    := false;
 		found_fmt_note     := false;
 		found_newline_note := false;
+		found_follow_note  := false;
 		fmt_str := "";
 		// Look for notes
 		for note : it.notes
@@ -31,6 +52,8 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 			}
 			else if note == "Fmt_Newline"
 				found_newline_note = true;
+			else if note == "Fmt_Follow_Ptr"
+				found_follow_note = true;
 		}
 
 		if highest_offset == -1
@@ -45,12 +68,15 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 			index += write_string (buffer, it.name);
 			index += write_string (buffer, " : ");
 		}
-		ptr := arg.value.value_pointer + it.offset_in_bytes;
+		ptr  := arg.value.value_pointer + it.offset_in_bytes;
+		info := it.type;
+		if found_follow_note
+			ptr, info = follow_pointer (ptr, info);
 		member_arg : Fmt_Arg (T);
 		if found_fmt_note
-			read_member_arg (*member_arg, fmt_str, ptr, it.type);
+			read_member_arg (*member_arg, fmt_str, ptr, info);
 		else
-			member_arg = copy_arg (arg, ptr = ptr, type = it.type);
+			member_arg = copy_arg (arg, ptr = ptr, type = info);
 		// @Cleanup @Note (stefan): Because we don't have an is_nested parameter
 		// in write_arg, we simulate nestedness by adding the SINGLE_LINE and QUOTED
 		// flags. The problem with that is for cases where nesting is not exactly
