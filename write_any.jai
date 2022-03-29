@@ -4,6 +4,15 @@ write_any :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 	return write_any (buffer, arg, false);
 }
 
+write_any :: inline (buffer : *$T, ptr : *void, type : *Type_Info, is_nested : bool) -> length : s64
+#modify { reject_non_buffer_types (T); }
+{
+	arg : Fmt_Arg (T);
+	arg.value.value_pointer = ptr;
+	arg.value.type = type;
+	return write_any (buffer, arg, is_nested);
+}
+
 write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 #modify { reject_non_buffer_types (T); }
 {
@@ -112,8 +121,14 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 		return index + write_any (buffer, copy_arg (arg, ptr = new_any.value_pointer, type = new_any.type));
 
 	case .PROCEDURE;
-		index += write_string (buffer, "procedure 0x");
-		index += write_u64 (buffer, <<cast (*u64) any.value_pointer, base = HEXADECIMAL_BASE);
+		value := <<cast (*u64) any.value_pointer;
+		if value
+		{
+			index += write_string (buffer, "procedure 0x");
+			index += write_u64 (buffer, value, base = HEXADECIMAL_BASE);
+		}
+		else
+			index += write_string (buffer, "null");
 
 		return index;
 
@@ -128,226 +143,107 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 	return index + write_string (buffer, "(corrupt type info)");
 }
 
-write_relative_pointer_size :: inline (buffer : *$T, size : s64) -> length : s64
-#modify { reject_non_buffer_types (T); }
+#scope_file
+
+follow_pointer :: inline (ptr : *void, info : *Type_Info) -> *void, *Type_Info
 {
-	if size ==
-	{
-	case 1;
-		return write_string (buffer, "~s8");
-	case 2;
-		return write_string (buffer, "~s16");
-	case 4;
-		return write_string (buffer, "~s32");
-	case 8;
-		return write_string (buffer, "~s64");
-	}
-	return 0;
+	if info.type != .POINTER
+		return ptr, info;
+	info_ptr := cast (*Type_Info_Pointer) info;
+	new_ptr : *void;
+	if info_ptr.relative_pointer_size
+		new_ptr = relative_to_absolute_ptr (ptr, info_ptr.relative_pointer_size);
+	else
+		new_ptr = <<cast (**void) ptr;
+	if new_ptr
+		return new_ptr, info_ptr.pointer_to;
+
+	return ptr, info;
 }
 
-write_type :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
-#modify { reject_non_buffer_types (T); }
-{
-	info := arg.value.type;
-	if info.type == .TYPE
-	|| info.type == .POINTER && is_substruct_of ((cast (*Type_Info_Pointer) info).pointer_to, type_info (Type_Info))
-		return write_type (buffer, <<cast (**Type_Info) arg.value.value_pointer, flagged (arg.flags, .PRINT_MEMBER_NAMES));
-	return write_type (buffer, arg.value.type, flagged (arg.flags, .PRINT_MEMBER_NAMES));
-}
+#scope_export
 
-write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> length : s64
+write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 #modify { reject_non_buffer_types (T); }
 {
-	if !info
-		return write_string (buffer, "null");
-	if #complete info.type ==
+	index := write_string (buffer, "{");
+	highest_offset := -1;
+	newline := false;
+	info_struct := cast (*Type_Info_Struct) arg.value.type;
+	for info_struct.members
 	{
-	case .VOID;
-		return write_string (buffer, "void");
-
-	case .STRING;
-		info_str := cast (*Type_Info_String) info;
-		i := write_string (buffer, "string");
-		i += write_relative_pointer_size (buffer, info_str.relative_pointer_size);
-
-		return i;
-
-	case .BOOL;
-		return write_string (buffer, "bool");
-
-	case .INTEGER;
-		info_int := cast (*Type_Info_Integer) info;
-		if info_int.runtime_size ==
+		if it.offset_in_bytes <= highest_offset
+			continue;
+		unclosed_format    := false;
+		found_fmt_note     := false;
+		found_newline_note := false;
+		found_follow_note  := false;
+		fmt_str := "";
+		// Look for notes
+		for note : it.notes
 		{
-		case 1;
-			if info_int.signed
-				return write_string (buffer, "s8");
-			else
-				return write_string (buffer, "u8");
-		case 2;
-			if info_int.signed
-				return write_string (buffer, "s16");
-			else
-				return write_string (buffer, "u16");
-		case 4;
-			if info_int.signed
-				return write_string (buffer, "s32");
-			else
-				return write_string (buffer, "u32");
-		case 8;
-			if info_int.signed
-				return write_string (buffer, "s64");
-			else
-				return write_string (buffer, "u64");
-		}
-
-	case .FLOAT;
-		if info.runtime_size ==
-		{
-		case 4;
-			return write_string (buffer, "f32");
-		case 8;
-			return write_string (buffer, "f64");
-		}
-
-	case .POINTER;
-		info_pointer := cast (*Type_Info_Pointer) info;
-		i := write_string (buffer, "*");
-		if info_pointer.relative_pointer_size
-		{
-			i += write_relative_pointer_size (buffer, info_pointer.relative_pointer_size);
-			i += write_string (buffer, " ");
-		}
-
-		return i + write_type (buffer, info_pointer.pointer_to, print_member_names);
-
-	case .ENUM;
-		info_enum := cast (*Type_Info_Enum) info;
-		if info_enum.name
-			return write_string (buffer, info_enum.name);
-		else
-			return write_string (buffer, "(anonymous enum)");
-
-	case .STRUCT;
-		info_struct := cast (*Type_Info_Struct) info;
-		index := 0;
-		if info_struct.name
-			index += write_string (buffer, info_struct.name);
-		else if flagged (info_struct.textual_flags, .UNION)
-			index += write_string (buffer, "(anonymous union)");
-		else
-			index += write_string (buffer, "(anonymous struct)");
-		if info_struct.polymorph_source_struct
-		{
-			index += write_string (buffer, " (");
-			for * param : info_struct.specified_parameters
+			if note == "Fmt_Ignore"
+				continue it;
+			else if starts_with (note, "Fmt(")
 			{
-				if it_index != 0
-					index += write_string (buffer, ", ");
-				if print_member_names
-					index += write_string (buffer, param.name);
-
-				if param.offset_into_constant_storage >= 0
+				if note[note.count - 1] != #char ")"
+					unclosed_format = true;
+				else
 				{
-					if print_member_names
-						index += write_string (buffer, " = ");
-					ptr := info_struct.constant_storage_buffer + param.offset_into_constant_storage;
-					index += write_any (buffer, ptr, param.type, true);
+					found_fmt_note = true;
+					fmt_str = advance (note, "Fmt(".count);
+					fmt_str.count -= 1;
 				}
 			}
-			index += write_string (buffer, ")");
+			else if note == "Fmt_Newline"
+				found_newline_note = true;
+			else if note == "Fmt_Follow_Ptr"
+				found_follow_note = true;
 		}
 
-		return index;
+		if highest_offset == -1
+			index += write_string (buffer, " ");
+		else if newline
+			index += write_string (buffer, ",\n  ");
+		else
+			index += write_string (buffer, ", ");
 
-	case .VARIANT;
-		return write_string (buffer, (cast (*Type_Info_Variant) info).name);
-
-	case .ARRAY;
-		info_array := cast (*Type_Info_Array) info;
-		index := 0;
-		if #complete info_array.array_type ==
+		if flagged (arg.flags, .PRINT_MEMBER_NAMES)
 		{
-		case .FIXED;
-			index += write_string (buffer, "[");
-			index += write_s64 (buffer, info_array.array_count);
-			index += write_string (buffer, "]");
-		case .VIEW;
-			index += write_string (buffer, "[]");
-			if info_array.relative_pointer_size
-			{
-				index += write_relative_pointer_size (buffer, info_array.relative_pointer_size);
-				index += write_string (buffer, " ");
-			}
-		case .RESIZABLE;
-			index += write_string (buffer, "[..]");
+			index += write_string (buffer, it.name);
+			index += write_string (buffer, " : ");
 		}
-		index += write_type (buffer, info_array.element_type, print_member_names);
-
-		return index;
-
-	case .PROCEDURE;
-		info_procedure := cast (*Type_Info_Procedure) info;
-		index := 0;
-		index += write_string (buffer, "(");
-		for info_procedure.argument_types
-		{
-			if it_index != 0
-				index += write_string (buffer, ", ");
-			index += write_type (buffer, it, print_member_names);
-		}
-		index += write_string (buffer, ")");
-
-		if info_procedure.return_types
-		{
-			index += write_string (buffer, " -> ");
-			if info_procedure.return_types.count > 1
-				index += write_string (buffer, "(");
-			for info_procedure.return_types
-			{
-				if it_index != 0
-					index += write_string (buffer, ", ");
-				index += write_type (buffer, it, print_member_names);
-			}
-			if info_procedure.return_types.count > 1
-				index += write_string (buffer, ")");
-		}
-		proc_flags := info_procedure.procedure_flags;
-		if flagged (proc_flags, .IS_ELSEWHERE)
-			index += write_string (buffer, "#elsewhere");
-		if flagged (proc_flags, .IS_COMPILE_TIME)
-			index += write_string (buffer, "#compiler");
-		if flagged (proc_flags, .IS_C_CALL)
-			index += write_string (buffer, "#c_call");
-		if flagged (proc_flags, .IS_INTRINSIC)
-			index += write_string (buffer, "#intrinsic");
-
-		return index;
-
-	case .CODE;
-		return write_string (buffer, "Code");
-
-	case .TYPE;
-		return write_string (buffer, "Type");
-
-	case .ANY;
-		return write_string (buffer, "Any");
-	
-	case .OVERLOAD_SET; #through;
-	case .POLYMORPHIC_VARIABLE;
-		return write_string (buffer, "(unhandled type)");
+		ptr  := arg.value.value_pointer + it.offset_in_bytes;
+		info := it.type;
+		if found_follow_note
+			ptr, info = follow_pointer (ptr, info);
+		member_arg : Fmt_Arg (T);
+		if found_fmt_note
+			read_member_arg (*member_arg, fmt_str, ptr, info);
+		else
+			member_arg = copy_arg (arg, ptr = ptr, type = info);
+		// @Cleanup @Note (stefan): Because we don't have an is_nested parameter
+		// in write_arg, we simulate nestedness by adding the SINGLE_LINE and QUOTED
+		// flags. The problem with that is for cases where nesting is not exactly
+		// the same as using these flags, the behaviour might not be correct.
+		// This is kind of a hack right now, but I don't know if we'll actually
+		// change this in the future. We used to call write_any, but the recent
+		// addition of Fmt() notes on struct members forces us to use write_arg
+		// instead, since write_any does not care about the specifier.
+		member_arg.flags |= .SINGLE_LINE;
+		member_arg.flags |= .QUOTED;
+		if unclosed_format
+			index += write_string (buffer, "(unclosed Fmt note)");
+		else if !member_arg.write_func
+			index += write_string (buffer, "(invalid specifier)");
+		else
+			index += write_arg (buffer, member_arg);
+		newline = !flagged (arg.flags, .SINGLE_LINE) && !is_nested && found_newline_note;
+		highest_offset = it.offset_in_bytes;
 	}
+	if highest_offset != -1
+		index += write_string (buffer, " ");
+	index += write_string (buffer, "}");
 
-	// We handle all types, so if we get here then type info is corrupt.
-	return write_string (buffer, "(corrupt type info)");
-}
-
-write_any :: inline (buffer : *$T, ptr : *void, type : *Type_Info, is_nested : bool) -> length : s64
-#modify { reject_non_buffer_types (T); }
-{
-	arg : Fmt_Arg (T);
-	arg.value.value_pointer = ptr;
-	arg.value.type = type;
-
-	return write_any (buffer, arg, is_nested);
+	return index;
 }

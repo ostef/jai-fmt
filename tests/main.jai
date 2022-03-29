@@ -42,11 +42,11 @@ test_string :: () -> ko : s64
 {
 	println ("Test :s");
 	ko := 0;
-	ko += test_print ("(null)", "{:s}", "");
-	ko += test_print ("    (null)", "{:10s}", "");
-	ko += test_print ("(null)", "{:010s}", "");
-	ko += test_print ("    (null)", "{:10s}", "");
-	ko += test_print ("(nu", "{:.3s}", "");
+	ko += test_print ("null", "{:s}", "");
+	ko += test_print ("      null", "{:10s}", "");
+	ko += test_print ("null", "{:010s}", "");
+	ko += test_print ("      null", "{:10s}", "");
+	ko += test_print ("nul", "{:.3s}", "");
 	ko += test_print ("Hello\\nSailor", "{:\\s}", "Hello\nSailor");
 	ko += test_print ("Hello", "{:\\.5s}", "Hello\nSailor");
 	ko += test_print ("   Hello Sailor", "{:15s}", "Hello Sailor");
@@ -280,6 +280,12 @@ test_any :: () -> ko : s64
 
 	ko += test_print ("(s64, *s64, *Test_Enum, Test_Poly_Struct (T = Type, N = 500)) -> (bool, string)", "{:!}", Test_Proc);
 	ko += test_print ("(s64, *s64, *Test_Enum, Test_Poly_Struct (Type, 500)) -> (bool, string)", "%", Test_Proc);
+	ko += test_print ("null", "{:t}", cast (*Type_Info) null);
+	ko += test_print ("[]~s16 u8", "{:t}", []~s16 u8);
+	ko += test_print ("[]~s16 u8", "{:t}", type_info ([]~s16 u8));
+	proc := test_print;
+	proc = null;
+	ko += test_print ("null", "%", proc);
 
 
 	ko += test_print ("{       +0.000,       +0.000 }", "%", Vec2f.{ 0, 0 });
