@@ -370,13 +370,13 @@ test_struct :: inline () -> ko : s64
 	Bar :: struct
 	{
 		z : int; @Fmt_Ignore
-		a : string; @Fmt(123.456o)
+		a : string; @Fmt(123.456o
 		b : int; @Fmt(123.456o)
 		c : int; @Fmt_Ignore
 		d : float; @Fmt(123.456o)
 	}
 
-	ko += test_print ("{ a : (invalid specifier), b : (invalid specifier), d : (invalid specifier) }", "{:!}", Bar.{ 5, "Bad specifier", 10, 11, 12 });
+	ko += test_print ("{ a : (unclosed Fmt note), b : (invalid specifier), d : (invalid specifier) }", "{:!}", Bar.{ 5, "Bad specifier", 10, 11, 12 });
 
 	Baz :: struct
 	{

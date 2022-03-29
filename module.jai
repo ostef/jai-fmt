@@ -8,6 +8,7 @@
 #load "write_integer.jai";
 #load "write_float.jai";
 #load "write_any.jai";
+#load "write_struct.jai";
 
 #scope_module
 

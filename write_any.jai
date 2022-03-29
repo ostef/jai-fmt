@@ -78,72 +78,7 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 		return index;
 
 	case .STRUCT;
-		info_struct := cast (*Type_Info_Struct) info;
-		index += write_string (buffer, "{");
-		highest_offset := -1;
-		newline := false;
-		for info_struct.members
-		{
-			if it.offset_in_bytes <= highest_offset
-				continue;
-			found_fmt_note := false;
-			found_newline_note := false;
-			fmt_str := "";
-			// Look for notes
-			for note : it.notes
-			{
-				if note == "Fmt_Ignore"
-					continue it;
-				else if starts_with (note, "Fmt(") && note[note.count - 1] == #char ")"
-				{
-					found_fmt_note = true;
-					fmt_str = advance (note, "Fmt(".count);
-					fmt_str.count -= 1;
-				}
-				else if note == "Fmt_Newline"
-					found_newline_note = true;
-			}
-
-			if highest_offset == -1
-				index += write_string (buffer, " ");
-			else if newline
-				index += write_string (buffer, ",\n  ");
-			else
-				index += write_string (buffer, ", ");
-
-			if flagged (arg.flags, .PRINT_MEMBER_NAMES)
-			{
-				index += write_string (buffer, it.name);
-				index += write_string (buffer, " : ");
-			}
-			ptr := any.value_pointer + it.offset_in_bytes;
-			member_arg : Fmt_Arg (T);
-			if found_fmt_note
-				read_member_arg (*member_arg, fmt_str, ptr, it.type);
-			else
-				member_arg = copy_arg (arg, ptr = ptr, type = it.type);
-			// @Cleanup @Note (stefan): Because we don't have an is_nested parameter
-			// in write_arg, we simulate nestedness by adding the SINGLE_LINE and QUOTED
-			// flags. The problem with that is for cases where nesting is not exactly
-			// the same as using these flags, the behaviour might not be correct.
-			// This is kind of a hack right now, but I don't know if we'll actually
-			// change this in the future. We used to call write_any, but the recent
-			// addition of Fmt() notes on struct members forces us to use write_arg
-			// instead, since write_any does not care about the specifier.
-			member_arg.flags |= .SINGLE_LINE;
-			member_arg.flags |= .QUOTED;	// See above
-			if !member_arg.write_func
-				index += write_string (buffer, "(invalid specifier)");
-			else
-				index += write_arg (buffer, member_arg);
-			newline = !flagged (arg.flags, .SINGLE_LINE) && !is_nested && found_newline_note;
-			highest_offset = it.offset_in_bytes;
-		}
-		if highest_offset != -1
-			index += write_string (buffer, " ");
-		index += write_string (buffer, "}");
-
-		return index;
+		return write_struct (buffer, arg, is_nested);
 
 	case .ARRAY;
 		info_array := cast (*Type_Info_Array) info;
@@ -247,19 +182,16 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 				return write_string (buffer, "s8");
 			else
 				return write_string (buffer, "u8");
-
 		case 2;
 			if info_int.signed
 				return write_string (buffer, "s16");
 			else
 				return write_string (buffer, "u16");
-
 		case 4;
 			if info_int.signed
 				return write_string (buffer, "s32");
 			else
 				return write_string (buffer, "u32");
-
 		case 8;
 			if info_int.signed
 				return write_string (buffer, "s64");
@@ -272,7 +204,6 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 		{
 		case 4;
 			return write_string (buffer, "f32");
-
 		case 8;
 			return write_string (buffer, "f64");
 		}
@@ -318,7 +249,8 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 				{
 					if print_member_names
 						index += write_string (buffer, " = ");
-					index += write_any (buffer, info_struct.constant_storage_buffer + param.offset_into_constant_storage, param.type);
+					ptr := info_struct.constant_storage_buffer + param.offset_into_constant_storage;
+					index += write_any (buffer, ptr, param.type, true);
 				}
 			}
 			index += write_string (buffer, ")");
@@ -327,9 +259,7 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 		return index;
 
 	case .VARIANT;
-		info_variant := cast (*Type_Info_Variant) info;
-
-		return write_string (buffer, info_variant.name);
+		return write_string (buffer, (cast (*Type_Info_Variant) info).name);
 
 	case .ARRAY;
 		info_array := cast (*Type_Info_Array) info;
@@ -342,6 +272,11 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 			index += write_string (buffer, "]");
 		case .VIEW;
 			index += write_string (buffer, "[]");
+			if info_array.relative_pointer_size
+			{
+				index += write_relative_pointer_size (buffer, info_array.relative_pointer_size);
+				index += write_string (buffer, " ");
+			}
 		case .RESIZABLE;
 			index += write_string (buffer, "[..]");
 		}
@@ -405,12 +340,12 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 	return write_string (buffer, "(corrupt type info)");
 }
 
-write_any :: inline (buffer : *$T, ptr : *void, type : *Type_Info) -> length : s64
+write_any :: inline (buffer : *$T, ptr : *void, type : *Type_Info, is_nested : bool) -> length : s64
 #modify { reject_non_buffer_types (T); }
 {
 	arg : Fmt_Arg (T);
 	arg.value.value_pointer = ptr;
 	arg.value.type = type;
 
-	return write_any (buffer, arg);
+	return write_any (buffer, arg, is_nested);
 }
