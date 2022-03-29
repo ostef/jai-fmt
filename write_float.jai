@@ -24,22 +24,10 @@ write_f64 :: inline (buffer : *$T, value : f64, precision : u32 = 6) -> length :
 	ryu_fmt.precision = precision;
 	ryu_fmt.flags |= .REMOVE_TRAILING_ZEROES;
 
-	exp_buffer : [50]u8 = ---;
-	exp_length := ryu.f64_to_exp_buffered (value, ryu_fmt, exp_buffer.data);
-	fixed_buffer : [500]u8 = ---;
-	fixed_length := ryu.f64_to_fixed_buffered (value, ryu_fmt, fixed_buffer.data);
-
+	temp_buffer : [500]u8 = ---;
 	str : string = ---;
-	if exp_length < fixed_length
-	{
-		str.data = exp_buffer.data;
-		str.count = exp_length;
-	}
-	else
-	{
-		str.data = fixed_buffer.data;
-		str.count = fixed_length;
-	}
+	str.data = temp_buffer.data;
+	str.count = ryu.f64_to_fixed_buffered (value, ryu_fmt, temp_buffer.data);;
 
 	return write_string (buffer, str);
 }

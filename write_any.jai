@@ -28,7 +28,7 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 		return index + write_arg (buffer, copy_arg (arg, new_func = write_decimal));
 
 	case .FLOAT;
-		return index + write_arg (buffer, copy_arg (arg, new_func = write_float_shortest));
+		return index + write_arg (buffer, copy_arg (arg, new_func = write_float_fixed));
 
 	case .POINTER;
 		return index + write_arg (buffer, copy_arg (arg, new_func = write_pointer));
