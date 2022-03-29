@@ -17,6 +17,7 @@ For aggregate types (arrays, structs), the formatting options are passed to the 
 * `<`: left justify. Ignored if width is not set,
 * `+`: print a '+' in front of positive signed integer and float values,
 * `' '`: align signed integers and floats, printing a ' ' in front of positive values,
+* `_`: same as above, for use where you can't have spaces like in notes,
 * `0`: pad integer and float values with '0' instead of ' ', ignored if `<` is set,
 * `#`: print the base prefix for integer values, '0x' or '0X' for hex, '0b' for binary,
 * `~`: for fixed and exponent form floating point numbers, leave trailing zeroes after decimal point. By default, trailing zeroes are trimmed,
@@ -97,6 +98,7 @@ A byte value of 0 indicates that the end of the formatting have been reached (fo
 This means that if your buffer is a flushing buffer, it should flush when it receives 0. The 0 should not be written to the buffer.
 
 # Additional formatting options
+* `@Fmt_Ignore` note on struct members: do not print the struct member if this not is found,
 * `@Fmt_Newline` note on struct members: if not nested, a newline will be printed after the member on which this note is on is printed.
 An example of printing a nested struct member might be when printing an array of a struct type. When this is the case, `@Fmt_Newline` is ignored.
 * `@Fmt(...)` note on struct members: instead of passing the formatting options to the member, the formatting string inside the parentheses is used to format the struct member.  

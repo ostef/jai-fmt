@@ -14,11 +14,7 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 	{
 	case .STRING;
 		if is_nested
-		{
-			index += write_arg (buffer, copy_arg (arg, new_func = write_string, add_flags = .QUOTED));
-
-			return index;
-		}
+			return index + write_arg (buffer, copy_arg (arg, new_func = write_string, add_flags = .QUOTED));
 		return index + write_arg (buffer, copy_arg (arg, new_func = write_string));
 
 	case .BOOL;
@@ -83,37 +79,42 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 
 	case .STRUCT;
 		info_struct := cast (*Type_Info_Struct) info;
-		index += write_string (buffer, "{ ");
+		index += write_string (buffer, "{");
 		highest_offset := -1;
 		newline := false;
 		for info_struct.members
 		{
 			if it.offset_in_bytes <= highest_offset
 				continue;
-			if highest_offset != -1
-			{
-				if newline
-					index += write_string (buffer, ",\n  ");
-				else
-					index += write_string (buffer, ", ");
-			}
-			if flagged (arg.flags, .PRINT_MEMBER_NAMES)
-			{
-				index += write_string (buffer, it.name);
-				index += write_string (buffer, " : ");
-			}
 			found_fmt_note := false;
+			found_newline_note := false;
 			fmt_str := "";
+			// Look for notes
 			for note : it.notes
 			{
-				if starts_with (note, "Fmt(") && note[note.count - 1] == #char ")"
+				if note == "Fmt_Ignore"
+					continue it;
+				else if starts_with (note, "Fmt(") && note[note.count - 1] == #char ")"
 				{
 					found_fmt_note = true;
 					fmt_str = advance (note, "Fmt(".count);
 					fmt_str.count -= 1;
-
-					break note;
 				}
+				else if note == "Fmt_Newline"
+					found_newline_note = true;
+			}
+
+			if highest_offset == -1
+				index += write_string (buffer, " ");
+			else if newline
+				index += write_string (buffer, ",\n  ");
+			else
+				index += write_string (buffer, ", ");
+
+			if flagged (arg.flags, .PRINT_MEMBER_NAMES)
+			{
+				index += write_string (buffer, it.name);
+				index += write_string (buffer, " : ");
 			}
 			ptr := any.value_pointer + it.offset_in_bytes;
 			member_arg : Fmt_Arg (T);
@@ -122,9 +123,9 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 			else
 				member_arg = copy_arg (arg, ptr = ptr, type = it.type);
 			// @Cleanup @Note (stefan): Because we don't have an is_nested parameter
-			// in write_arg, we simulate nestedness by adding the SINGLE_LINE
-			// flag. The problem with that is for cases where nesting is not exactly
-			// the same as using SINGLE_LINE, the behaviour might not be correct.
+			// in write_arg, we simulate nestedness by adding the SINGLE_LINE and QUOTED
+			// flags. The problem with that is for cases where nesting is not exactly
+			// the same as using these flags, the behaviour might not be correct.
 			// This is kind of a hack right now, but I don't know if we'll actually
 			// change this in the future. We used to call write_any, but the recent
 			// addition of Fmt() notes on struct members forces us to use write_arg
@@ -135,10 +136,12 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 				index += write_string (buffer, "(invalid specifier)");
 			else
 				index += write_arg (buffer, member_arg);
-			newline = !flagged (arg.flags, .SINGLE_LINE) && !is_nested && find_first_occurence (it.notes, "Fmt_Newline") != -1;
+			newline = !flagged (arg.flags, .SINGLE_LINE) && !is_nested && found_newline_note;
 			highest_offset = it.offset_in_bytes;
 		}
-		index += write_string (buffer, " }");
+		if highest_offset != -1
+			index += write_string (buffer, " ");
+		index += write_string (buffer, "}");
 
 		return index;
 
