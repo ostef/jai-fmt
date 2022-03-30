@@ -103,4 +103,4 @@ This means that if your buffer is a flushing buffer, it should flush when it rec
 An example of printing a nested struct member might be when printing an array of a struct type. When this is the case, `@Fmt_Newline` is ignored.
 * `@Fmt(...)` note on struct members: instead of passing the formatting options to the member, the formatting string inside the parentheses is used to format the struct member.  
 The formatting string in this case cannot have an argument index and as such should not contain `:` to separate the argument index with the formatting options. It also cannot have `*` instead of numbers for width and precision. If the parentheses are not provided, the note is ignored.  
-* `@Fmt_Follow_Ptr` note on struct members: if the member is of pointer type, follow the pointer and print the value and the address if the pointer is non-null.  
+* `@Fmt_Follow_Ptr` note on struct members: if the member is of pointer type, follow the pointer and print the pointed value if the pointer is non-null.  
