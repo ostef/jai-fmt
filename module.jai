@@ -181,6 +181,8 @@ Fmt_Arg :: struct (Buffer_Type : Type)
 	specifier  : u8;
 	write_func : Write_Func;
 	value      : Any;
+	// Additional information used by specific formatting functions
+	union_tag : s64;
 }
 
 #scope_file

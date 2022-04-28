@@ -103,4 +103,30 @@ This means that if your buffer is a flushing buffer, it should flush when it rec
 An example of printing a nested struct member might be when printing an array of a struct type. When this is the case, `@Fmt_Newline` is ignored.
 * `@Fmt(...)` note on struct members: instead of passing the formatting options to the member, the formatting string inside the parentheses is used to format the struct member.  
 The formatting string in this case cannot have an argument index and as such should not contain `:` to separate the argument index with the formatting options. It also cannot have `*` instead of numbers for width and precision. If the parentheses are not provided, the note is ignored.  
-* `@Fmt_Follow_Ptr` note on struct members: if the member is of pointer type, follow the pointer and print the pointed value if the pointer is non-null.  
+* `@Fmt_Follow_Ptr` note on struct members: if the member is of pointer type, follow the pointer and print the pointed value if the pointer is non-null,  
+* `@Fmt_Tag` note on struct member: tells Fmt that the member is a tag used to discriminate which union member is valid (see `@Fmt_Tagged_Union` note).  
+Fot this note to work, the member has to be of enum (non-flags) type, with each enum member's value being the index of the corresponding member in the union,  
+* `@Fmt_Tagged_Union` note on struct member: tells Fmt that the member is a union which value is discriminated by the value of the last member which had a `@Fmt_Tag` note.
+
+## Tagged Union Example
+```jai
+Tagged_Union :: struct
+{
+	Kind :: enum
+	{
+		INT    :: 0;
+		FLOAT  :: 1;
+		STRING :: 2;
+	}
+
+	kind : Kind;	@Fmt_Tag
+	// This must be a declaration for notes to work
+	// (i.e. an identifier followed by a colon)
+	using val : union
+	{
+		as_int : int;		// Member of index 0, which is the value of Kind.INT
+		as_float : float;	// Member of index 1, which is the value of Kind.FLOAT
+		as_string : string;	// Member of index 2, which is the value of Kind.STRING
+	};	@Fmt_Tagged_Union
+}
+```

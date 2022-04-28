@@ -399,6 +399,106 @@ test_struct :: inline () -> ko : s64
 
 	ko += test_print ("{}", "%", Baz.{});
 
+	Tagged_Union :: struct
+	{
+		Kind :: enum
+		{
+			INT;
+			FLOAT;
+			BOOL;
+			STRING;
+		}
+
+		kind : Kind;	@Fmt_Tag
+		using val : union
+		{
+			as_int : int;
+			as_float : float;	@Fmt(.3)
+			as_bool : bool;	@Fmt_Ignore
+			as_string : string;
+		}; @Fmt_Tagged_Union
+	}
+
+	{
+		a : Tagged_Union;
+		a.kind = .INT;
+		a.as_int = 10;
+		ko += test_print ("{ INT, 10 }", "%", a);
+		b : Tagged_Union;
+		b.kind = .FLOAT;
+		b.as_float = 123.456;
+		ko += test_print ("{ FLOAT, 123.456 }", "%", b);
+		c : Tagged_Union;
+		c.kind = .STRING;
+		c.as_string = "Hello Sailor!";
+		ko += test_print ("{ STRING, \"Hello Sailor!\" }", "%", c);
+		d : Tagged_Union;
+		d.kind = .BOOL;
+		d.as_bool = false;
+		ko += test_print ("{ BOOL, (ignored) }", "%", d);
+	}
+
+	Invalid_Tagged_Union :: struct
+	{
+		Kind :: enum
+		{
+			A;
+			B;
+			C;
+		}
+
+		bad_kind : int;	@Fmt_Tag
+		good_kind : Kind;	@Fmt_Tag
+		bad_val : struct
+		{
+			a : int;
+			b : int;
+		};	@Fmt_Tagged_Union
+	}
+
+	ko += test_print ("{ 10, B, { 10, 12 } }", "%", Invalid_Tagged_Union.{ 10, .B, .{ 10, 12 } });
+
+	Multi_Tagged_Union :: struct
+	{
+		Kind :: enum
+		{
+			A;
+			B;
+			C;
+		}
+
+		first_kind : Kind;	@Fmt_Tag
+		first_val : union
+		{
+			a : int;
+			b : float;
+			c : string;
+		};	@Fmt_Tagged_Union
+		first_val2 : union
+		{
+			a : int;
+			b : float;
+			c : string;
+		};	@Fmt_Tagged_Union
+		second_kind : Kind;	@Fmt_Tag
+		second_val : union
+		{
+			a : int;
+			b : float;
+			c : string;
+		};	@Fmt_Tagged_Union
+	}
+
+	{
+		val : Multi_Tagged_Union;
+		val.first_kind = .A;
+		val.first_val.a = 10;
+		val.first_val2.a = 12;
+		val.second_kind = .C;
+		val.second_val.c = "Hello";
+		ko += test_print ("{ A, 10, 12, C, \"Hello\" }", "%", val);
+	}
+
 	println ("% KOs.", ko);
 	println ("============================");
 

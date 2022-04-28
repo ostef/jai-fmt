@@ -170,6 +170,8 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 	highest_offset := -1;
 	newline := false;
 	info_struct := cast (*Type_Info_Struct) arg.value.type;
+	has_tag : bool;
+	union_tag : s64;
 	for info_struct.members
 	{
 		if it.offset_in_bytes <= highest_offset
@@ -178,6 +180,8 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 		found_fmt_note     := false;
 		found_newline_note := false;
 		found_follow_note  := false;
+		found_tag_note     := false;
+		found_tag_union_note := false;
 		fmt_str := "";
 		// Look for notes
 		for note : it.notes
@@ -199,6 +203,10 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 				found_newline_note = true;
 			else if note == "Fmt_Follow_Ptr"
 				found_follow_note = true;
+			else if note == "Fmt_Tag"
+				found_tag_note = true;
+			else if note == "Fmt_Tagged_Union"
+				found_tag_union_note = true;
 		}
 
 		if highest_offset == -1
@@ -217,11 +225,33 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 		info := it.type;
 		if found_follow_note
 			ptr, info = follow_pointer (ptr, info);
+		if found_tag_note && info.type == .ENUM
+		{
+			info_enum := cast (*Type_Info_Enum) info;
+			if !flagged (info_enum.enum_type_flags, .FLAGS)
+			{
+				has_tag = true;
+				if info_enum.runtime_size ==
+				{
+				case 1; union_tag = <<cast (*s8) ptr;
+				case 2; union_tag = <<cast (*s16) ptr;
+				case 4; union_tag = <<cast (*s32) ptr;
+				case 8; union_tag = <<cast (*s64) ptr;
+				}
+			}
+		}
+
 		member_arg : Fmt_Arg (T);
 		if found_fmt_note
 			read_member_arg (*member_arg, fmt_str, ptr, info);
 		else
 			member_arg = copy_arg (arg, ptr = ptr, type = info);
+		if has_tag && found_tag_union_note && it.type.type == .STRUCT
+		&& flagged ((cast (*Type_Info_Struct) it.type).textual_flags, .UNION)
+		{
+			member_arg = copy_arg (member_arg, new_func = write_tagged_union);
+			member_arg.union_tag = union_tag;
+		}
 		// @Cleanup @Note (stefan): Because we don't have an is_nested parameter
 		// in write_arg, we simulate nestedness by adding the SINGLE_LINE and QUOTED
 		// flags. The problem with that is for cases where nesting is not exactly
@@ -246,4 +276,64 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 	index += write_string (buffer, "}");
 
 	return index;
+}
+
+write_tagged_union :: (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
+#modify { reject_non_buffer_types (T); }
+{
+	info_struct := cast (*Type_Info_Struct) arg.value.type;
+	if arg.union_tag < 0 || arg.union_tag >= info_struct.members.count
+		return write_string (buffer, "(invalid union tag)");
+	newline := false;
+	it := info_struct.members[arg.union_tag];
+	
+	unclosed_format   := false;
+	found_fmt_note    := false;
+	found_follow_note := false;
+	fmt_str := "";
+	// Look for notes
+	for note : it.notes
+	{
+		if note == "Fmt_Ignore"
+			return write_string (buffer, "(ignored)");
+		else if starts_with (note, "Fmt(")
+		{
+			if note[note.count - 1] != #char ")"
+				unclosed_format = true;
+			else
+			{
+				found_fmt_note = true;
+				fmt_str = advance (note, "Fmt(".count);
+				fmt_str.count -= 1;
+			}
+		}
+		else if note == "Fmt_Follow_Ptr"
+			found_follow_note = true;
+	}
+
+	ptr  := arg.value.value_pointer + it.offset_in_bytes;
+	info := it.type;
+	if found_follow_note
+		ptr, info = follow_pointer (ptr, info);
+
+	member_arg : Fmt_Arg (T);
+	if found_fmt_note
+		read_member_arg (*member_arg, fmt_str, ptr, info);
+	else
+		member_arg = copy_arg (arg, ptr = ptr, type = info, new_func = write_any);
+	// @Cleanup @Note (stefan): Because we don't have an is_nested parameter
+	// in write_arg, we simulate nestedness by adding the SINGLE_LINE and QUOTED
+	// flags. The problem with that is for cases where nesting is not exactly
+	// the same as using these flags, the behaviour might not be correct.
+	// This is kind of a hack right now, but I don't know if we'll actually
+	// change this in the future. We used to call write_any, but the recent
+	// addition of Fmt() notes on struct members forces us to use write_arg
+	// instead, since write_any does not care about the specifier.
+	member_arg.flags |= .SINGLE_LINE;
+	member_arg.flags |= .QUOTED;
+	if unclosed_format
+		return write_string (buffer, "(unclosed Fmt note)");
+	else if !member_arg.write_func
+		return write_string (buffer, "(invalid specifier)");
+	return write_arg (buffer, member_arg);
 }
