@@ -480,7 +480,7 @@ test_struct :: inline () -> ko : s64
 			b : float;
 			c : string;
 		};	@Fmt_Tagged_Union
-		second_kind : Kind;	@Fmt_Tag
+		second_kind : Kind;	@Fmt_Tag @Fmt_Ignore
 		second_val : union
 		{
 			a : int;
@@ -496,7 +496,7 @@ test_struct :: inline () -> ko : s64
 		val.first_val2.a = 12;
 		val.second_kind = .C;
 		val.second_val.c = "Hello";
-		ko += test_print ("{ A, 10, 12, C, \"Hello\" }", "%", val);
+		ko += test_print ("{ A, 10, 12, \"Hello\" }", "%", val);
 	}
 
 	println ("% KOs.", ko);

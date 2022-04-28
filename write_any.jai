@@ -177,6 +177,7 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 		if it.offset_in_bytes <= highest_offset
 			continue;
 		unclosed_format    := false;
+		found_ignore_note  := false;
 		found_fmt_note     := false;
 		found_newline_note := false;
 		found_follow_note  := false;
@@ -187,7 +188,7 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 		for note : it.notes
 		{
 			if note == "Fmt_Ignore"
-				continue it;
+				found_ignore_note = true;
 			else if starts_with (note, "Fmt(")
 			{
 				if note[note.count - 1] != #char ")"
@@ -209,6 +210,27 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 				found_tag_union_note = true;
 		}
 
+		ptr  := arg.value.value_pointer + it.offset_in_bytes;
+		info := it.type;
+		if found_follow_note
+			ptr, info = follow_pointer (ptr, info);
+		if found_tag_note
+		{
+			info_enum := cast (*Type_Info_Enum) it.type;
+			if info_enum.type == .ENUM && !flagged (info_enum.enum_type_flags, .FLAGS)
+			{
+				has_tag = true;
+				if info_enum.runtime_size ==
+				{
+				case 1; union_tag = <<cast (*s8) ptr;
+				case 2; union_tag = <<cast (*s16) ptr;
+				case 4; union_tag = <<cast (*s32) ptr;
+				case 8; union_tag = <<cast (*s64) ptr;
+				}
+			}
+		}
+		if found_ignore_note
+			continue;
 		if highest_offset == -1
 			index += write_string (buffer, " ");
 		else if newline
@@ -220,25 +242,6 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 		{
 			index += write_string (buffer, it.name);
 			index += write_string (buffer, " : ");
-		}
-		ptr  := arg.value.value_pointer + it.offset_in_bytes;
-		info := it.type;
-		if found_follow_note
-			ptr, info = follow_pointer (ptr, info);
-		if found_tag_note && info.type == .ENUM
-		{
-			info_enum := cast (*Type_Info_Enum) info;
-			if !flagged (info_enum.enum_type_flags, .FLAGS)
-			{
-				has_tag = true;
-				if info_enum.runtime_size ==
-				{
-				case 1; union_tag = <<cast (*s8) ptr;
-				case 2; union_tag = <<cast (*s16) ptr;
-				case 4; union_tag = <<cast (*s32) ptr;
-				case 8; union_tag = <<cast (*s64) ptr;
-				}
-			}
 		}
 
 		member_arg : Fmt_Arg (T);
