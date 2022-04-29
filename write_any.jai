@@ -220,13 +220,7 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 			if info_enum.type == .ENUM && !flagged (info_enum.enum_type_flags, .FLAGS)
 			{
 				has_tag = true;
-				if info_enum.runtime_size ==
-				{
-				case 1; union_tag = <<cast (*s8) ptr;
-				case 2; union_tag = <<cast (*s16) ptr;
-				case 4; union_tag = <<cast (*s32) ptr;
-				case 8; union_tag = <<cast (*s64) ptr;
-				}
+				union_tag = any_to_s64 (ptr, info_enum.internal_type);
 			}
 		}
 		if found_ignore_note
