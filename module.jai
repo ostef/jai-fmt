@@ -121,8 +121,9 @@ Fmt_Flags :: enum_flags
 	LEAVE_TRAILING_ZEROES  :: 0x020;	// For fixed and exponent form floating point numbers, leave trailing zeroes after decimal point
 	PRINT_ESCAPE_SEQUENCES :: 0x040;	// Print escape sequences for non printable characters
 	QUOTED                 :: 0x080;	// Surround with quotes for character or string specifiers, and print on one line
-	SINGLE_LINE            :: 0x100;	// Print on one line
-	PRINT_MEMBER_NAMES     :: 0x200;	// Print struct member names
+	SINGLE_LINE            :: 0x100;	// Print on one line, making Fmt_Newline note do nothing
+	MULTI_LINE             :: 0x200;	// Print on multiple lines, unless we see a Fmt_Same_Line note
+	PRINT_MEMBER_NAMES     :: 0x400;	// Print struct member names
 }
 
 // @Note (stefan): All of the things in the Fmt_Specifiers struct used
@@ -131,7 +132,7 @@ Fmt_Flags :: enum_flags
 // first. The thing is, #procedure_of_call takes the desired arguments,
 // which are a Buffer and an Fmt_Arg, meaning we need to make a literal
 // for Fmt_Arg, which we can't do in Fmt_Arg itself because it would
-// create a circular dependency. Why does 
+// create a circular dependency. Why does this work though ?
 Fmt_Specifiers :: struct (Buffer_Type : Type)
 {
 	Write_Func :: #type (buffer : *Buffer_Type, arg : Fmt_Arg (Buffer_Type)) -> length : s64;
@@ -187,7 +188,7 @@ Fmt_Arg :: struct (Buffer_Type : Type)
 
 #scope_file
 
-FLAG_KEYS   :: "<>+ _0#~\\'$!";
+FLAG_KEYS   :: "<>+ _0#~\\'$,!";
 FLAG_VALUES :: Fmt_Flags.[
 	.LEFT_JUSTIFY,
 	.RIGHT_JUSTIFY,
@@ -200,6 +201,7 @@ FLAG_VALUES :: Fmt_Flags.[
 	.PRINT_ESCAPE_SEQUENCES,
 	.QUOTED,
 	.SINGLE_LINE,
+	.MULTI_LINE,
 	.PRINT_MEMBER_NAMES
 ];
 

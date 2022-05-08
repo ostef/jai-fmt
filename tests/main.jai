@@ -339,6 +339,8 @@ test_other :: () -> ko : s64
 	ko += test_print ("s64", "{:t}", 10);
 	ko += test_print ("string", "{:t}", "Hello Sailor");
 	ko += test_print ("*u8", "{:t}", "Hello Sailor".data);
+	ko += test_print ("[ (4) 1, 2, 3, 4 ]", "{}", s64.[ 1, 2, 3, 4 ]);
+	ko += test_print ("\n[ (4)\n  1,\n  2,\n  3,\n  4 ]", "\n{:,}", s64.[ 1, 2, 3, 4 ]);
 	println ("% KOs.", ko);
 	println ("============================");
 
@@ -353,8 +355,25 @@ test_struct :: inline () -> ko : s64
 	ko += test_print ("{       +1.234,       +5.679 }", "{}", Vec2f.{ 1.234, 5.6785 });
 	ko += test_print ("{ 1.234, 5.678, 9.1011 }", "{}", Vec3f.{ 1.234, 5.678, 9.1011 });
 	ko += test_print ("\n{ 1, 0, 0,\n  0, 1, 0,\n  0, 0, 1 }", "\n{}", MAT3F_IDENTITY);
+	ko += test_print ("\n{ 1, 0, 0, 0, 1, 0, 0, 0, 1 }", "\n{:$}", MAT3F_IDENTITY);
+	ko += test_print ("\n{ 1, 0, 0,\n  0, 1, 0,\n  0, 0, 1 }", "\n{:,}", MAT3F_IDENTITY);
+	ko += test_print ("\n{ 0,\n  0,\n  0 }", "\n{:,}", Vec3f.{ 0, 0, 0 });
 	ko += test_print ("\n{ 001.000, 000.000, 000.000,\n  000.000, 001.000, 000.000,\n  000.000, 000.000, 001.000 }", "\n{:~07.3}", MAT3F_IDENTITY);
 	ko += test_print ("{ 001.000, 000.000, 000.000, 000.000, 001.000, 000.000, 000.000, 000.000, 001.000 }", "{:~$07.3}", MAT3F_IDENTITY);
+
+	Another_Mat3 :: struct
+	{
+		r00 : f32; @Fmt_Same_Line
+		r01 : f32; @Fmt_Same_Line
+		r02 : f32;
+		r10 : f32; @Fmt_Same_Line
+		r11 : f32; @Fmt_Same_Line
+		r12 : f32;
+		r20 : f32; @Fmt_Same_Line
+		r21 : f32; @Fmt_Same_Line
+		r22 : f32;
+	}
+	ko += test_print ("\n{ 0, 0, 0,\n  0, 0, 0,\n  0, 0, 0 }", "\n{:,}", Another_Mat3.{});
 
 	Foo :: struct
 	{
@@ -632,9 +651,9 @@ Test_Proc :: #type (int, *int, *Test_Enum, Test_Poly_Struct (Type, 500)) -> bool
 
 Mat3f :: struct
 {
-	r0c0 : f32; r0c1 : f32; r0c2 : f32; @Fmt_Newline
-	r1c0 : f32; r1c1 : f32; r1c2 : f32; @Fmt_Newline
-	r2c0 : f32; r2c1 : f32; r2c2 : f32; @Fmt_Newline
+	r0c0 : f32; @Fmt_Same_Line r0c1 : f32; @Fmt_Same_Line r0c2 : f32; @Fmt_Newline
+	r1c0 : f32; @Fmt_Same_Line r1c1 : f32; @Fmt_Same_Line r1c2 : f32; @Fmt_Newline
+	r2c0 : f32; @Fmt_Same_Line r2c1 : f32; @Fmt_Same_Line r2c2 : f32; @Fmt_Newline
 
 	#place r0c0;
 	c0r0, c1r0, c2r0 : f32;

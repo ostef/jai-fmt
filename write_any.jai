@@ -97,11 +97,20 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 		if info_array.array_type == .RESIZABLE
 			index += write_string (buffer, "..");
 		index += write_s64 (buffer, count);
-		index += write_string (buffer, ") ");
+		index += write_string (buffer, ")");
 		for i : 0..count - 1
 		{
-			if i != 0
+			if flagged (arg.flags, .MULTI_LINE)
+			{
+				if i == 0
+					index += write_string (buffer, "\n  ");
+				else
+					index += write_string (buffer, ",\n  ");
+			}
+			else if i != 0
 				index += write_string (buffer, ", ");
+			else
+				index += write_string (buffer, " ");
 			ptr := data + i * info_array.element_type.runtime_size;
 			index += write_any (buffer, copy_arg (arg, ptr = ptr, type = info_array.element_type), is_nested = true);
 		}
@@ -180,6 +189,7 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 		found_ignore_note  := false;
 		found_fmt_note     := false;
 		found_newline_note := false;
+		found_same_line_note := false;
 		found_follow_note  := false;
 		found_tag_note     := false;
 		found_tag_union_note := false;
@@ -202,6 +212,8 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 			}
 			else if note == "Fmt_Newline"
 				found_newline_note = true;
+			else if note == "Fmt_Same_Line"
+				found_same_line_note = true;
 			else if note == "Fmt_Follow_Ptr"
 				found_follow_note = true;
 			else if note == "Fmt_Tag"
@@ -263,7 +275,8 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 		// change this in the future. We used to call write_any, but the recent
 		// addition of Fmt() notes on struct members forces us to use write_arg
 		// instead, since write_any does not care about the specifier.
-		member_arg.flags |= .SINGLE_LINE;
+		if !flagged (arg.flags, .MULTI_LINE) || flagged (arg.flags, .SINGLE_LINE)
+			member_arg.flags |= .SINGLE_LINE;
 		member_arg.flags |= .QUOTED;
 		if unclosed_format
 			index += write_string (buffer, "(unclosed Fmt note)");
@@ -271,7 +284,8 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 			index += write_string (buffer, "(invalid specifier)");
 		else
 			index += write_arg (buffer, member_arg);
-		newline = !flagged (arg.flags, .SINGLE_LINE) && !is_nested && found_newline_note;
+		newline = (!flagged (arg.flags, .SINGLE_LINE) && !is_nested && found_newline_note)
+			|| (flagged (arg.flags, .MULTI_LINE) && !found_same_line_note);
 		highest_offset = it.offset_in_bytes;
 	}
 	if highest_offset != -1
