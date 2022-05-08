@@ -95,8 +95,7 @@ write_byte :: (buffer : *T, byte : u8)
 ```
 The rules of polymorphism allow `write_byte` to not be constant.  
 It is valid to call `write_byte` with a null `buffer`, in which case calling `write_byte` should be a no-op.  
-A byte value of 0 indicates that the end of the formatting have been reached (for now we don't make sure we don't send 0 to `write_byte` in other places, but we should).
-This means that if your buffer is a flushing buffer, it should flush when it receives 0. The 0 should not be written to the buffer.
+A byte value of 0 indicates that the end of the formatting have been reached. This means that if your buffer is a flushing buffer, it should flush when it receives 0. The 0 should not be written to the buffer.
 
 # Additional formatting options
 * `@Fmt_Ignore` note on struct members: do not print the struct member if this note is found,  
