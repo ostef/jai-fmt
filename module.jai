@@ -121,7 +121,7 @@ Fmt_Flags :: enum_flags
 	LEAVE_TRAILING_ZEROES  :: 0x020;	// For fixed and exponent form floating point numbers, leave trailing zeroes after decimal point
 	PRINT_ESCAPE_SEQUENCES :: 0x040;	// Print escape sequences for non printable characters
 	QUOTED                 :: 0x080;	// Surround with quotes for character or string specifiers, and print on one line
-	SINGLE_LINE            :: 0x100;	// Print on one line, making Fmt_Newline note do nothing
+	SINGLE_LINE            :: 0x100;	// Print on one line, making Fmt_New_Line note do nothing
 	MULTI_LINE             :: 0x200;	// Print on multiple lines, unless we see a Fmt_Same_Line note
 	PRINT_MEMBER_NAMES     :: 0x400;	// Print struct member names
 }

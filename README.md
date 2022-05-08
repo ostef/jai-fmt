@@ -23,7 +23,7 @@ For aggregate types (arrays, structs), the formatting options are passed to the 
 * `~`: for fixed and exponent form floating point numbers, leave trailing zeroes after decimal point. By default, trailing zeroes are trimmed,
 * `\\`: print escape sequences for non printable characters,
 * `'`: same as `\\`, but also print surrounding single quotes for characters, double quotes for strings,
-* `$`: print on one line, for strings and characters, this is the same as the `\\` flag, ignoring `@Fmt_Newline` notes if found,
+* `$`: print on one line, for strings and characters, this is the same as the `\\` flag, ignoring `@Fmt_New_Line` notes if found,
 * `,`: print on multiple lines, for arrays and structs types, if an `@Fmt_Same_Line` note is found, don't print a newline character,
 * `!`: print struct member names
 
@@ -99,8 +99,8 @@ A byte value of 0 indicates that the end of the formatting have been reached. Th
 
 # Additional formatting options
 * `@Fmt_Ignore` note on struct members: do not print the struct member if this note is found,  
-* `@Fmt_Newline` note on struct members: if not nested, a newline will be printed after the member on which this note is on is printed.
-An example of printing a nested struct member might be when printing an array of a struct type. When this is the case, `@Fmt_Newline` is ignored.
+* `@Fmt_New_Line` note on struct members: if not nested, a newline will be printed after the member on which this note is on is printed.
+An example of printing a nested struct member might be when printing an array of a struct type. When this is the case, `@Fmt_New_Line` is ignored.
 * `@Fmt_Same_Line` note on struct members: when the multi line `,` flag is used, don't print a newline after the member.
 * `@Fmt(...)` note on struct members: instead of passing the formatting options to the member, the formatting string inside the parentheses is used to format the struct member.  
 The formatting string in this case cannot have an argument index and as such should not contain `:` to separate the argument index with the formatting options. It also cannot have `*` instead of numbers for width and precision. If the parentheses are not provided, the note is ignored.  

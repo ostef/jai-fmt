@@ -210,7 +210,9 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 					fmt_str.count -= 1;
 				}
 			}
-			else if note == "Fmt_Newline"
+			else if note == "Fmt_Newline"	// @Cleanup (stefan): To be removed
+				found_newline_note = true;
+			else if note == "Fmt_New_Line"
 				found_newline_note = true;
 			else if note == "Fmt_Same_Line"
 				found_same_line_note = true;

@@ -377,9 +377,9 @@ test_struct :: inline () -> ko : s64
 
 	Foo :: struct
 	{
-		a : string; @Fmt_Newline
-		b : int; @Fmt_Newline
-		c : float; @Fmt_Newline
+		a : string; @Fmt_New_Line
+		b : int; @Fmt_New_Line
+		c : float; @Fmt_New_Line
 	}
 
 	ko += test_print ("{ \"Foo\\nBar\\nBaz\",\n  0,\n  1.234 }", "%", Foo.{ "Foo\nBar\nBaz", 0, 1.234 });
@@ -651,9 +651,9 @@ Test_Proc :: #type (int, *int, *Test_Enum, Test_Poly_Struct (Type, 500)) -> bool
 
 Mat3f :: struct
 {
-	r0c0 : f32; @Fmt_Same_Line r0c1 : f32; @Fmt_Same_Line r0c2 : f32; @Fmt_Newline
-	r1c0 : f32; @Fmt_Same_Line r1c1 : f32; @Fmt_Same_Line r1c2 : f32; @Fmt_Newline
-	r2c0 : f32; @Fmt_Same_Line r2c1 : f32; @Fmt_Same_Line r2c2 : f32; @Fmt_Newline
+	r0c0 : f32; @Fmt_Same_Line r0c1 : f32; @Fmt_Same_Line r0c2 : f32; @Fmt_New_Line
+	r1c0 : f32; @Fmt_Same_Line r1c1 : f32; @Fmt_Same_Line r1c2 : f32; @Fmt_New_Line
+	r2c0 : f32; @Fmt_Same_Line r2c1 : f32; @Fmt_Same_Line r2c2 : f32; @Fmt_New_Line
 
 	#place r0c0;
 	c0r0, c1r0, c2r0 : f32;
