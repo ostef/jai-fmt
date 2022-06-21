@@ -4,7 +4,7 @@ String formatting module written in Jai.
 
 # Dependencies
 Fmt depends on my port of [Ryū: Fast float to string conversion](https://github.com/ostef/jai-ryu). The to_shortest and string to float conversions are not imported.  
-Ryu is the only module that gets imported by Fmt.
+This dependency can be removed via the IMPORT_RYU program parameter.
 
 # Usage
 Formatting arguments follow this pattern:  
@@ -44,9 +44,9 @@ Valid precision values are positive or negative integer values, or a * character
 * `X`: print 64-bit unsigned integer in uppercase hexadecimal,
 * `p`: print pointers as lowercase hexadecimal 64-bit unsigned integer, print 'null' if the value is null,
 * `P`: print pointers as uppercase hexadecimal 64-bit unsigned integer, print 'null' if the value is null,
-* `f`: print 64-bit floating point number in fixed form (uses Ryu d2fixed conversion),
-* `e`: print 64-bit floating point number in lowercase exponent form (uses Ryu d2exp conversion),
-* `E`: print 64-bit floating point number in uppercase exponent form (uses Ryu d2exp conversion),
+* `f`: print 64-bit floating point number in fixed form (uses Ryu d2fixed conversion, if imported),
+* `e`: print 64-bit floating point number in lowercase exponent form (uses Ryu d2exp conversion, if imported),
+* `E`: print 64-bit floating point number in uppercase exponent form (uses Ryu d2exp conversion, if imported),
 * `g`: print the shortest representation of a 64-bit floating point number between fixed and exponent lowercase form,
 * `G`: print the shortest representation of a 64-bit floating point number between fixed and exponent uppercase form,
 * `t`: print a `Type` or type information as a type. For other values, print the value's type.
@@ -56,6 +56,7 @@ Valid precision values are positive or negative integer values, or a * character
 * If the specifier is invalid, '(invalid specifier)' is printed,
 * If the provided argument index is not a valid unsigned integer, '(invalid argument index)' is printed,
 * If there are not enough arguments, '(no argument provided)' is printed,
+* For floating point specifiers, if Ryu is not imported, '(Ryu not imported)' is printed,
 * For most specifiers, if the argument cannot be converted to the correct type, the default value is printed (0 for integer and float types, empty string for strings).
 
 These are the main procedures:

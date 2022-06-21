@@ -1,4 +1,4 @@
-#module_parameters () (PRINTER_BUFFER_SIZE := 1024);
+#module_parameters () (IMPORT_RYU := true, PRINTER_BUFFER_SIZE := 1024);
 
 #load "utils.jai";
 #load "any.jai";
