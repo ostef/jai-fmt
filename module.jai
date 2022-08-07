@@ -585,3 +585,18 @@ format :: inline (allocator : Allocator, fmt_str : string, args : ..Any) -> stri
 
 	return str;
 }
+
+format_to_cstring :: inline (allocator : Allocator, fmt_str : string, args : ..Any) -> *u8 #must
+{
+	buffer : Fmt_Buffer;
+	buffer.capacity = format (cast (*Fmt_Buffer) null, fmt_str, ..args);
+	if buffer.capacity == 0
+		return "";
+	buffer.data  = cast (*u8) allocator.proc (.ALLOCATE, buffer.capacity + 1, 0, null, allocator.data);
+	str : string = ---;
+	str.data = buffer.data;
+	str.count = format (*buffer, fmt_str, ..args);
+	str.data[str.count] = 0;
+	
+	return str.data;
+}
