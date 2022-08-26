@@ -341,6 +341,7 @@ test_other :: () -> ko : s64
 	ko += test_print ("*u8", "{:t}", "Hello Sailor".data);
 	ko += test_print ("[ (4) 1, 2, 3, 4 ]", "{}", s64.[ 1, 2, 3, 4 ]);
 	ko += test_print ("\n[ (4)\n  1,\n  2,\n  3,\n  4 ]", "\n{:,}", s64.[ 1, 2, 3, 4 ]);
+	ko += test_print ("#import Basic", "%", Basic);
 	println ("% KOs.", ko);
 	println ("============================");
 
