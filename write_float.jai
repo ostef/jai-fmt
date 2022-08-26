@@ -23,6 +23,7 @@ write_f64 :: inline (buffer : *$T, value : f64, precision : u32 = 6) -> length :
 	{
 		if precision > 16
 			precision = 16;
+
 		ryu_fmt : ryu.Format;
 		ryu_fmt.precision = precision;
 		ryu_fmt.flags |= .REMOVE_TRAILING_ZEROES;
@@ -46,18 +47,24 @@ write_float_fixed :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 	#if IMPORT_RYU
 	{
 		ryu_fmt : ryu.Format;
+
 		if flagged (arg.flags, .PAD_WITH_ZEROES) && !flagged (arg.flags, .LEFT_JUSTIFY) && arg.width > 0
 			ryu_fmt.min_width = cast (u32) arg.width;
+
 		ryu_fmt.precision = 6;
+
 		if arg.precision >= 0
 			ryu_fmt.precision = cast (u32) arg.precision;
 		if ryu_fmt.precision > 16
 			ryu_fmt.precision = 16;
+
 		if flagged (arg.flags, .FORCE_SIGN)
 			ryu_fmt.flags |= .FORCE_SIGN;
 		else if flagged (arg.flags, .ALIGN_SIGN)
 			ryu_fmt.flags |= .ALIGN_SIGN;
+
 		ryu_fmt.flags |= .FORCE_SIGN_ON_EXPONENT;
+
 		if !flagged (arg.flags, .LEAVE_TRAILING_ZEROES)
 			ryu_fmt.flags |= .REMOVE_TRAILING_ZEROES;
 
@@ -80,19 +87,24 @@ write_float_exp :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 	#if IMPORT_RYU
 	{
 		ryu_fmt : ryu.Format;
+
 		if flagged (arg.flags, .PAD_WITH_ZEROES) && !flagged (arg.flags, .LEFT_JUSTIFY) && arg.width > 0
 			ryu_fmt.min_width = cast (u32) arg.width;
+
 		ryu_fmt.precision = 6;
 		if arg.precision >= 0
 			ryu_fmt.precision = cast (u32) arg.precision;
 		if ryu_fmt.precision > 16
 			ryu_fmt.precision = 16;
+
 		if flagged (arg.flags, .FORCE_SIGN)
 			ryu_fmt.flags |= .FORCE_SIGN;
 		else if flagged (arg.flags, .ALIGN_SIGN)
 			ryu_fmt.flags |= .ALIGN_SIGN;
+
 		if is_upper (arg.specifier)
 			ryu_fmt.flags |= .UPPERCASE;
+
 		ryu_fmt.flags |= .FORCE_SIGN_ON_EXPONENT;
 		if !flagged (arg.flags, .LEAVE_TRAILING_ZEROES)
 			ryu_fmt.flags |= .REMOVE_TRAILING_ZEROES;
@@ -116,18 +128,23 @@ write_float_shortest :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 	#if IMPORT_RYU
 	{
 		ryu_fmt : ryu.Format;
+
 		if flagged (arg.flags, .PAD_WITH_ZEROES) && !flagged (arg.flags, .LEFT_JUSTIFY) && arg.width > 0
 			ryu_fmt.min_width = cast (u32) arg.width;
+
 		ryu_fmt.precision = 6;
 		if arg.precision >= 0
 			ryu_fmt.precision = cast (u32) arg.precision;
 		if ryu_fmt.precision > 16
 			ryu_fmt.precision = 16;
+
 		if flagged (arg.flags, .FORCE_SIGN)
 			ryu_fmt.flags |= .FORCE_SIGN;
 		else if flagged (arg.flags, .ALIGN_SIGN)
 			ryu_fmt.flags |= .ALIGN_SIGN;
+
 		ryu_fmt.flags |= .FORCE_SIGN_ON_EXPONENT;
+
 		if !flagged (arg.flags, .LEAVE_TRAILING_ZEROES)
 			ryu_fmt.flags |= .REMOVE_TRAILING_ZEROES;
 

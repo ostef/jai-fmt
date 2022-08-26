@@ -14,6 +14,7 @@ write_bool :: inline (buffer : *$T, value : bool) -> length : s64
 {
 	if value
 		return write_string (buffer, "true");
+
 	return write_string (buffer, "false");
 }
 
@@ -39,6 +40,7 @@ write_decimal :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 #modify { reject_non_buffer_types (T); }
 {
 	i := 0;
+
 	unsigned_value, negative := any_to_integer (arg.value);
 	if negative
 		i += write_string (buffer, "-");
@@ -69,6 +71,7 @@ write_hexadecimal :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 		else
 			i += write_string (buffer, "0x");
 	}
+
 	min_width := -1;
 	if arg.precision >= 0
 		min_width = arg.precision;
@@ -88,16 +91,19 @@ write_pointer :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 {
 	if !any_to_ptr (arg.value)
 		return write_string (buffer, "null");
+
 	i := 0;
 	if arg.specifier == #char "X"
 		i += write_string (buffer, "0X");
 	else
 		i += write_string (buffer, "0x");
+
 	min_width := -1;
 	if arg.precision >= 0
 		min_width = arg.precision;
 	else if !flagged (arg.flags, .LEFT_JUSTIFY) && flagged (arg.flags, .PAD_WITH_ZEROES)
 		min_width = arg.width - i;
+
 	if arg.specifier == #char "P"
 		i += write_u64 (buffer, cast (u64) any_to_ptr (arg.value), min_width, UPPER_HEXADECIMAL_BASE);
 	else
@@ -130,12 +136,14 @@ write_u64 :: inline (buffer : *$T, value : u64, min_width := -1, $$base := DECIM
 		tmp /= cast (u64) base.count;
 		length += 1;
 	}
+
 	tmp_buffer : [64]u8 = ---;
 	for < i : length - 1..0
 	{
 		tmp_buffer[i] = base[value % cast (u64) base.count];
 		value /= cast (u64) base.count;
 	}
+
 	str : string = ---;
 	str.data = tmp_buffer.data;
 	str.count = length;

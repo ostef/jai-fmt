@@ -5,13 +5,17 @@ write_relative_pointer_size :: inline (buffer : *$T, size : s64) -> length : s64
 	{
 	case 1;
 		return write_string (buffer, "~s8");
+
 	case 2;
 		return write_string (buffer, "~s16");
+
 	case 4;
 		return write_string (buffer, "~s32");
+
 	case 8;
 		return write_string (buffer, "~s64");
 	}
+
 	return 0;
 }
 
@@ -22,6 +26,7 @@ write_type :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 	if info.type == .TYPE || info == type_info (*Type_Info)
 	|| info.type == .POINTER && is_substruct_of ((cast (*Type_Info_Pointer) info).pointer_to, type_info (Type_Info))
 		return write_type (buffer, <<cast (**Type_Info) arg.value.value_pointer, flagged (arg.flags, .PRINT_MEMBER_NAMES));
+
 	return write_type (buffer, arg.value.type, flagged (arg.flags, .PRINT_MEMBER_NAMES));
 }
 
@@ -30,6 +35,7 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 {
 	if !info
 		return write_string (buffer, "null");
+
 	if #complete info.type ==
 	{
 	case .VOID;
@@ -54,16 +60,19 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 				return write_string (buffer, "s8");
 			else
 				return write_string (buffer, "u8");
+
 		case 2;
 			if info_int.signed
 				return write_string (buffer, "s16");
 			else
 				return write_string (buffer, "u16");
+
 		case 4;
 			if info_int.signed
 				return write_string (buffer, "s32");
 			else
 				return write_string (buffer, "u32");
+
 		case 8;
 			if info_int.signed
 				return write_string (buffer, "s64");
@@ -76,12 +85,14 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 		{
 		case 4;
 			return write_string (buffer, "f32");
+
 		case 8;
 			return write_string (buffer, "f64");
 		}
 
 	case .POINTER;
 		info_pointer := cast (*Type_Info_Pointer) info;
+
 		i := write_string (buffer, "*");
 		if info_pointer.relative_pointer_size
 		{
@@ -100,6 +111,7 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 
 	case .STRUCT;
 		info_struct := cast (*Type_Info_Struct) info;
+
 		index := 0;
 		if info_struct.name
 			index += write_string (buffer, info_struct.name);
@@ -107,6 +119,7 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 			index += write_string (buffer, "(anonymous union)");
 		else
 			index += write_string (buffer, "(anonymous struct)");
+
 		if info_struct.polymorph_source_struct
 		{
 			index += write_string (buffer, " (");
@@ -121,10 +134,12 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 				{
 					if print_member_names
 						index += write_string (buffer, " = ");
+
 					ptr := info_struct.constant_storage_buffer + param.offset_into_constant_storage;
 					index += write_any (buffer, ptr, param.type, true);
 				}
 			}
+
 			index += write_string (buffer, ")");
 		}
 
@@ -142,6 +157,7 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 			index += write_string (buffer, "[");
 			index += write_s64 (buffer, info_array.array_count);
 			index += write_string (buffer, "]");
+
 		case .VIEW;
 			index += write_string (buffer, "[]");
 			if info_array.relative_pointer_size
@@ -149,39 +165,49 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 				index += write_relative_pointer_size (buffer, info_array.relative_pointer_size);
 				index += write_string (buffer, " ");
 			}
+
 		case .RESIZABLE;
 			index += write_string (buffer, "[..]");
 		}
+
 		index += write_type (buffer, info_array.element_type, print_member_names);
 
 		return index;
 
 	case .PROCEDURE;
 		info_procedure := cast (*Type_Info_Procedure) info;
+
 		index := 0;
 		index += write_string (buffer, "(");
 		for info_procedure.argument_types
 		{
 			if it_index != 0
 				index += write_string (buffer, ", ");
+
 			index += write_type (buffer, it, print_member_names);
 		}
+
 		index += write_string (buffer, ")");
 
 		if info_procedure.return_types
 		{
 			index += write_string (buffer, " -> ");
+
 			if info_procedure.return_types.count > 1
 				index += write_string (buffer, "(");
+
 			for info_procedure.return_types
 			{
 				if it_index != 0
 					index += write_string (buffer, ", ");
+
 				index += write_type (buffer, it, print_member_names);
 			}
+
 			if info_procedure.return_types.count > 1
 				index += write_string (buffer, ")");
 		}
+
 		proc_flags := info_procedure.procedure_flags;
 		if flagged (proc_flags, .IS_ELSEWHERE)
 			index += write_string (buffer, "#elsewhere");

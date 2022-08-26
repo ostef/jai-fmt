@@ -11,6 +11,7 @@ Printer :: struct
 	{
 		if printer
 		{
+			// Flush if we receive a 0, or if we filled the buffer
 			if byte == 0 || count == PRINTER_BUFFER_SIZE
 			{
 				str : string = ---;
@@ -19,6 +20,7 @@ Printer :: struct
 				write_string (str);
 				count = 0;
 			}
+
 			if byte
 			{
 				buffer[count] = byte;

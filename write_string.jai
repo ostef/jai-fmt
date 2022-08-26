@@ -2,12 +2,15 @@ write_char :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 #modify { reject_non_buffer_types (T); }
 {
 	index := 0;
+
 	if flagged (arg.flags, .QUOTED)
 		index += write_string (buffer, "'");
+
 	if flagged (arg.flags, .QUOTED) || flagged (arg.flags, .PRINT_ESCAPE_SEQUENCES) || flagged (arg.flags, .SINGLE_LINE)
 		index += write_char_escaped (buffer, cast (u32) any_to_u64 (arg.value));
 	else
 		index += write_char (buffer, cast (u32) any_to_u64 (arg.value));
+
 	if flagged (arg.flags, .QUOTED)
 		index += write_string (buffer, "'");
 
@@ -44,20 +47,28 @@ write_char_escaped :: inline (buffer : *$T, codepoint : u32) -> length : s64
 	{
 	case 0x00;
 		return write_string (buffer, "\\0");
+
 	case 0x07;	// Alert
 		return write_string (buffer, "\\a");
+
 	case 0x08;	// Backspace
 		return write_string (buffer, "\\b");
+
 	case 0x0c;	// Formfeed Page Break
 		return write_string (buffer, "\\f");
+
 	case #char "\n";
 		return write_string (buffer, "\\n");
+
 	case #char "\r";
 		return write_string (buffer, "\\r");
+
 	case #char "\t";
 		return write_string (buffer, "\\t");
+
 	case 0x0b;	// Vertical Tab
 		return write_string (buffer, "\\v");
+
 	case #char "\\";
 		return write_string (buffer, "\\\\");
 	}
@@ -70,6 +81,7 @@ write_chars :: inline (buffer : *$T, codepoint : u32, count : s64) -> length : s
 {
 	if count <= 0
 		return 0;
+
 	i := 0;
 	for 0..count - 1
 		i += write_char (buffer, codepoint);
@@ -87,10 +99,12 @@ write_string :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 	index := 0;
 	if flagged (arg.flags, .QUOTED)
 		index += write_string (buffer, "\"");
+
 	if flagged (arg.flags, .QUOTED) || flagged (arg.flags, .PRINT_ESCAPE_SEQUENCES) || flagged (arg.flags, .SINGLE_LINE)
 		index += write_string_escaped (buffer, str, arg.precision);
 	else
 		index += write_string (buffer, str, arg.precision);
+
 	if flagged (arg.flags, .QUOTED)
 		index += write_string (buffer, "\"");
 
@@ -105,6 +119,7 @@ write_string :: inline (buffer : *$T, str : string, max_length := -1) -> length 
 	length := str.count;
 	if max_length >= 0 && length > max_length
 		length = max_length;
+
 	for i : 0..length - 1
 		write_byte (buffer, str[i]);
 
@@ -115,6 +130,7 @@ write_string_escaped :: inline (buffer : *$T, str : string, max_length := -1) ->
 #modify { reject_non_buffer_types (T); }
 {
 	if max_length < 0 then max_length = str.count;
+
 	length := 0;
 	for i : 0..max_length - 1
 	{
@@ -122,22 +138,31 @@ write_string_escaped :: inline (buffer : *$T, str : string, max_length := -1) ->
 		{
 		case 0x00;
 			length += write_string (buffer, "\\0");
+
 		case 0x07;	// Alert
 			length += write_string (buffer, "\\a");
+
 		case 0x08;	// Backspace
 			length += write_string (buffer, "\\b");
+
 		case 0x0c;	// Formfeed Page Break
 			length += write_string (buffer, "\\f");
+
 		case #char "\n";
 			length += write_string (buffer, "\\n");
+
 		case #char "\r";
 			length += write_string (buffer, "\\r");
+
 		case #char "\t";
 			length += write_string (buffer, "\\t");
+
 		case 0x0b;	// Vertical Tab
 			length += write_string (buffer, "\\v");
+
 		case #char "\\";
 			length += write_string (buffer, "\\\\");
+
 		case;
 			length += write_byte (buffer, str[i]);
 		}

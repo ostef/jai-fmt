@@ -79,6 +79,7 @@ is_buffer_type :: inline (type : Type) -> bool #must
 	info := cast (*Type_Info) type;
 	if info.type != .STRUCT
 		return false;
+
 	info_struct := cast (*Type_Info_Struct) info;
 	for info_struct.members
 	{
@@ -86,14 +87,18 @@ is_buffer_type :: inline (type : Type) -> bool #must
 		{
 			if it.type.type != .PROCEDURE
 				return false;
+
 			info_proc := cast (*Type_Info_Procedure) it.type;
 			if info_proc.argument_types.count != 2 || info_proc.return_types.count != 0
 				return false;
+
 			if info_proc.argument_types[0].type != .POINTER
 				return false;
+
 			info_arg0 := cast (*Type_Info_Pointer) info_proc.argument_types[0];
 			if info_arg0.relative_pointer_size != 0 || info_arg0.pointer_to != info
 				return false;
+
 			if info_proc.argument_types[1] != type_info (u8)
 				return false;
 
@@ -263,6 +268,7 @@ read_member_arg :: inline (
 		}
 		if !found_flag then break;
 	}
+
 	// Read optional width
 	if i < len && is_digit (fmt_str[i])
 	{
@@ -270,6 +276,7 @@ read_member_arg :: inline (
 		i += skip;
 		result.width = cast (s64) value;
 	}
+
 	// Read optional precision
 	if i < len && fmt_str[i] == #char "."
 	{
@@ -282,11 +289,13 @@ read_member_arg :: inline (
 			result.precision = value;
 		}
 	}
+
 	// Read optional specifier
 	if i < len
 	{
 		result.specifier = fmt_str[i];
 		i += 1;
+
 		// Get write function
 		for si : 0..result.Specifiers.KEYS.count - 1
 		{
@@ -318,6 +327,7 @@ read_arg :: inline (
 	arg_skip := 0;
 	i := 0;
 	specified := false;
+
 	// Find the end of the format
 	len := i;
 	while len < fmt_str.count && fmt_str[len] != #char "}"
@@ -327,6 +337,7 @@ read_arg :: inline (
 		specified = true;
 		i += 1;
 	}
+
 	// Read optional argument index
 	if i < len && !specified
 	{
@@ -351,14 +362,17 @@ read_arg :: inline (
 		else
 			result.arg_index = cast (s64) value;
 	}
+
 	if !specified
 	{
 		result.write_func = write_any;
+
 		if result.arg_index == -1
 		{
 			result.arg_index = arg_index + arg_skip;
 			arg_skip += 1;
 		}
+
 		i = len;
 		if i < fmt_str.count
 			i += 1;
@@ -381,8 +395,10 @@ read_arg :: inline (
 				break;
 			}
 		}
+
 		if !found_flag then break;
 	}
+
 	// Read optional width
 	if i < len && fmt_str[i] == #char "*"
 	{
@@ -416,10 +432,12 @@ read_arg :: inline (
 			result.precision = value;
 		}
 	}
+
 	if i < len
 	{
 		result.specifier = fmt_str[i];
 		i += 1;
+
 		// Get write function
 		for si : 0..result.Specifiers.KEYS.count - 1
 		{
@@ -433,9 +451,11 @@ read_arg :: inline (
 	}
 	else
 		result.write_func = write_any;
+
 	i = len;
 	if i < fmt_str.count
 		i += 1;
+
 	// We read width and precision, so we set the arg_index here
 	// since we're sure the arg_skip won't change anymore.
 	if result.arg_index == -1
@@ -500,12 +520,15 @@ write_arg :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64 #must
 	{
 		temp_buffer : [690]u8 = ---;
 		length := write_arg_to_temp_buffer (temp_buffer, arg);
+
 		if !flagged (arg.flags, .LEFT_JUSTIFY)
 			i += write_chars (buffer, #char " ", arg.width - length);
+
 		if length <= temp_buffer.count
 			i += write_string (buffer, make_string (temp_buffer.data, length));
 		else
 			i += arg.write_func (buffer, arg);
+
 		if flagged (arg.flags, .LEFT_JUSTIFY)
 			i += write_chars (buffer, #char " ", arg.width - length);
 	}
@@ -533,6 +556,7 @@ format :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> length : s64
 				fmt_skip := 0;
 				arg_skip := 0;
 				unclosed := false;
+			
 				if fmt_str[fmt_index - 1] == #char "{"
 				{
 					fmt_skip, arg_skip = read_arg (*arg, advance (fmt_str, fmt_index), arg_index, ..args);
@@ -544,8 +568,10 @@ format :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> length : s64
 					arg.arg_index = arg_index;
 					arg_skip = 1;
 				}
+			
 				fmt_index += fmt_skip;
 				arg_index += arg_skip;
+			
 				if unclosed
 					buffer_index += write_string (buffer, "(unclosed format)");
 				else if !arg.write_func
@@ -563,9 +589,11 @@ format :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> length : s64
 				continue;
 			}
 		}
+
 		buffer_index += write_byte (buffer, fmt_str[fmt_index]);
 		fmt_index    += 1;
 	}
+
 	// Indicate to the buffer that the end of the string has been reached, and it should flush if necessary
 	buffer.write_byte (buffer, 0);
 
@@ -579,6 +607,7 @@ format :: inline (allocator : Allocator, fmt_str : string, args : ..Any) -> stri
 	if buffer.capacity == 0
 		return "";
 	buffer.data  = cast (*u8) allocator.proc (.ALLOCATE, buffer.capacity, 0, null, allocator.data);
+
 	str : string = ---;
 	str.data = buffer.data;
 	str.count = format (*buffer, fmt_str, ..args);
@@ -593,6 +622,7 @@ format_to_cstring :: inline (allocator : Allocator, fmt_str : string, args : ..A
 	if buffer.capacity == 0
 		return "";
 	buffer.data  = cast (*u8) allocator.proc (.ALLOCATE, buffer.capacity + 1, 0, null, allocator.data);
+
 	str : string = ---;
 	str.data = buffer.data;
 	str.count = format (*buffer, fmt_str, ..args);

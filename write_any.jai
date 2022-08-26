@@ -24,6 +24,7 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 	case .STRING;
 		if is_nested
 			return index + write_arg (buffer, copy_arg (arg, new_func = write_string, add_flags = .QUOTED));
+
 		return index + write_arg (buffer, copy_arg (arg, new_func = write_string));
 
 	case .BOOL;
@@ -52,11 +53,13 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 				value := cast (u64) it;
 				if !flagged (flags_value, value) || flagged (flags_printed, value)
 					continue;
-				flags_printed |= value;
+
 				if !first
 					index += write_string (buffer, " | ");
 				index += write_string (buffer, info_enum.names[it_index]);
+
 				first = false;
+				flags_printed |= value;
 			}
 
 			out_of_range := remove_flag (flags_value, flags_printed);
@@ -64,6 +67,7 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 			{
 				if !first
 					index += write_string (buffer, " | ");
+
 				index += write_string (buffer, "0x");
 				index += write_u64 (buffer, out_of_range, base = HEXADECIMAL_BASE);
 			}
@@ -93,9 +97,12 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 		info_array := cast (*Type_Info_Array) info;
 		count := any_get_array_count (any);
 		data  := any_get_array_data (any);
+
 		index += write_string (buffer, "[ (");
+
 		if info_array.array_type == .RESIZABLE
 			index += write_string (buffer, "..");
+
 		index += write_s64 (buffer, count);
 		index += write_string (buffer, ")");
 		for i : 0..count - 1
@@ -111,9 +118,11 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 				index += write_string (buffer, ", ");
 			else
 				index += write_string (buffer, " ");
+
 			ptr := data + i * info_array.element_type.runtime_size;
 			index += write_any (buffer, copy_arg (arg, ptr = ptr, type = info_array.element_type), is_nested = true);
 		}
+
 		index += write_string (buffer, " ]");
 
 		return index;
@@ -158,12 +167,14 @@ follow_pointer :: inline (ptr : *void, info : *Type_Info) -> *void, *Type_Info
 {
 	if info.type != .POINTER
 		return ptr, info;
+
 	info_ptr := cast (*Type_Info_Pointer) info;
 	new_ptr : *void;
 	if info_ptr.relative_pointer_size
 		new_ptr = relative_to_absolute_ptr (ptr, info_ptr.relative_pointer_size);
 	else
 		new_ptr = <<cast (**void) ptr;
+
 	if new_ptr
 		return new_ptr, info_ptr.pointer_to;
 
@@ -176,27 +187,34 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 #modify { reject_non_buffer_types (T); }
 {
 	index := write_string (buffer, "{");
+	info_struct := cast (*Type_Info_Struct) arg.value.type;
+
 	highest_offset := -1;
 	newline := false;
-	info_struct := cast (*Type_Info_Struct) arg.value.type;
+
 	has_tag : bool;
 	union_tag : s64;
+
 	for info_struct.members
 	{
 		if it.offset_in_bytes <= highest_offset
 			continue;
+
 		unclosed_format    := false;
 		found_ignore_note  := false;
 		found_fmt_note     := false;
-		found_newline_note := false;
+		found_new_line_note := false;
 		found_same_line_note := false;
 		found_follow_note  := false;
 		found_tag_note     := false;
 		found_tag_union_note := false;
 		fmt_str := "";
+
 		// Look for notes
 		for note : it.notes
 		{
+			// We can't go to the next member even if we need to ignore it, because
+			// it might have important infos like the tag for tagged unions and stuff
 			if note == "Fmt_Ignore"
 				found_ignore_note = true;
 			else if starts_with (note, "Fmt(")
@@ -210,10 +228,10 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 					fmt_str.count -= 1;
 				}
 			}
-			else if note == "Fmt_Newline"	// @Cleanup (stefan): To be removed
-				found_newline_note = true;
+			else if note == "Fmt_Newline"	// @Cleanup (stefan): Deprecated, use Fmt_New_Line instead
+				found_new_line_note = true;
 			else if note == "Fmt_New_Line"
-				found_newline_note = true;
+				found_new_line_note = true;
 			else if note == "Fmt_Same_Line"
 				found_same_line_note = true;
 			else if note == "Fmt_Follow_Ptr"
@@ -228,6 +246,7 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 		info := it.type;
 		if found_follow_note
 			ptr, info = follow_pointer (ptr, info);
+
 		if found_tag_note
 		{
 			info_enum := cast (*Type_Info_Enum) it.type;
@@ -237,8 +256,10 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 				union_tag = any_to_s64 (ptr, info_enum.internal_type);
 			}
 		}
+
 		if found_ignore_note
 			continue;
+
 		if highest_offset == -1
 			index += write_string (buffer, " ");
 		else if newline
@@ -257,12 +278,14 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 			read_member_arg (*member_arg, fmt_str, ptr, info);
 		else
 			member_arg = copy_arg (arg, ptr = ptr, type = info);
+
 		if has_tag && found_tag_union_note && it.type.type == .STRUCT
 		&& flagged ((cast (*Type_Info_Struct) it.type).textual_flags, .UNION)
 		{
 			member_arg = copy_arg (member_arg, new_func = write_tagged_union);
 			member_arg.union_tag = union_tag;
 		}
+
 		// @Cleanup @Note (stefan): Because we don't have an is_nested parameter
 		// in write_arg, we simulate nestedness by adding the SINGLE_LINE and QUOTED
 		// flags. The problem with that is for cases where nesting is not exactly
@@ -274,18 +297,23 @@ write_struct :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : 
 		if !flagged (arg.flags, .MULTI_LINE) || flagged (arg.flags, .SINGLE_LINE)
 			member_arg.flags |= .SINGLE_LINE;
 		member_arg.flags |= .QUOTED;
+
 		if unclosed_format
 			index += write_string (buffer, "(unclosed Fmt note)");
 		else if !member_arg.write_func
 			index += write_string (buffer, "(invalid specifier)");
 		else
 			index += write_arg (buffer, member_arg);
-		newline = (!flagged (arg.flags, .SINGLE_LINE) && !is_nested && found_newline_note)
+
+		newline = (!flagged (arg.flags, .SINGLE_LINE) && !is_nested && found_new_line_note)
 			|| (flagged (arg.flags, .MULTI_LINE) && !found_same_line_note);
+
 		highest_offset = it.offset_in_bytes;
 	}
+
 	if highest_offset != -1
 		index += write_string (buffer, " ");
+
 	index += write_string (buffer, "}");
 
 	return index;
@@ -297,6 +325,7 @@ write_tagged_union :: (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 	info_struct := cast (*Type_Info_Struct) arg.value.type;
 	if arg.union_tag < 0 || arg.union_tag >= info_struct.members.count
 		return write_string (buffer, "(invalid union tag)");
+
 	newline := false;
 	it := info_struct.members[arg.union_tag];
 	
@@ -304,6 +333,7 @@ write_tagged_union :: (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 	found_fmt_note    := false;
 	found_follow_note := false;
 	fmt_str := "";
+
 	// Look for notes
 	for note : it.notes
 	{
@@ -334,6 +364,7 @@ write_tagged_union :: (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 		read_member_arg (*member_arg, fmt_str, ptr, info);
 	else
 		member_arg = copy_arg (arg, ptr = ptr, type = info, new_func = write_any);
+
 	// @Cleanup @Note (stefan): Because we don't have an is_nested parameter
 	// in write_arg, we simulate nestedness by adding the SINGLE_LINE and QUOTED
 	// flags. The problem with that is for cases where nesting is not exactly
@@ -344,9 +375,11 @@ write_tagged_union :: (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 	// instead, since write_any does not care about the specifier.
 	member_arg.flags |= .SINGLE_LINE;
 	member_arg.flags |= .QUOTED;
+
 	if unclosed_format
 		return write_string (buffer, "(unclosed Fmt note)");
 	else if !member_arg.write_func
 		return write_string (buffer, "(invalid specifier)");
+
 	return write_arg (buffer, member_arg);
 }

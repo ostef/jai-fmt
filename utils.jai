@@ -23,15 +23,15 @@ decimal_length :: inline (value : $T, $$base : u64 = 10) -> s64 #must
 		unsigned_value = cast (u64) -value;
 	else
 		unsigned_value = cast (u64) value;
+
 	length := 0;
 	while unsigned_value > 0 || length == 0
 	{
 		unsigned_value /= base;
 		length += 1;
 	}
-	if value < 0 then length += 1;
 
-	return length;
+	return length + cast (s64) (value < 0);
 }
 
 find_first_occurence :: inline (array : []$T, val : T) -> s64 #must
@@ -60,6 +60,7 @@ starts_with :: inline (str : string, with : string) -> bool #must
 {
 	if str.count < with.count
 		return false;
+
 	for i : 0..with.count - 1
 	{
 		if str[i] != with[i]
@@ -131,6 +132,7 @@ string_to_s64 :: inline (str : string) -> value : s64 #must, bytes_read : s64
 		sign = cast (s64) (str[0] == #char "+") * 2 - 1;
 		i += 1;
 	}
+
 	unsigned_value, bytes_read := string_to_u64 (advance (str, i));
 	if bytes_read == 0 then return 0, 0;
 	signed_value := sign * cast (s64) unsigned_value;
@@ -176,16 +178,19 @@ utf8_encode :: inline (buffer : []u8, codepoint : u32) -> length : s64, written 
 	else if i > UNICODE_MAX || (i >= 0xd800 && i <= 0xdfff)
 	{
 		codepoint = UNICODE_INVALID;
+
 		if buffer.count > 0
 		{
 			buffer[0] = 0xe0 |  cast (u8) (codepoint >> 12);
 			written += 1;
 		}
+
 		if buffer.count > 1
 		{
 			buffer[1] = 0x80 | (cast (u8) (codepoint >> 6) & MASK);
 			written += 1;
 		}
+
 		if buffer.count > 2
 		{
 			buffer[2] = 0x80 | (cast (u8) (codepoint) & MASK);
@@ -201,11 +206,13 @@ utf8_encode :: inline (buffer : []u8, codepoint : u32) -> length : s64, written 
 			buffer[0] = 0xe0 |  cast (u8) (codepoint >> 12);
 			written += 1;
 		}
+
 		if buffer.count > 1
 		{
 			buffer[1] = 0x80 | (cast (u8) (codepoint >> 6) & MASK);
 			written += 1;
 		}
+
 		if buffer.count > 2
 		{
 			buffer[2] = 0x80 | (cast (u8) (codepoint) & MASK);
@@ -221,16 +228,19 @@ utf8_encode :: inline (buffer : []u8, codepoint : u32) -> length : s64, written 
 			buffer[0] = 0xf0 |  cast (u8) (codepoint >> 18);
 			written += 1;
 		}
+
 		if buffer.count > 1
 		{
 			buffer[1] = 0x80 | (cast (u8) (codepoint >> 12) & MASK);
 			written += 1;
 		}
+
 		if buffer.count > 2
 		{
 			buffer[2] = 0x80 | (cast (u8) (codepoint >> 6) & MASK);
 			written += 1;
 		}
+
 		if buffer.count > 3
 		{
 			buffer[3] = 0x80 | (cast (u8) (codepoint) & MASK);

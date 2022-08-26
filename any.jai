@@ -6,16 +6,20 @@ is_substruct_of :: (info : *Type_Info, of : *Type_Info_Struct, nested := false) 
 {
 	if info.type != .STRUCT
 		return false;
+
 	info_struct := cast (*Type_Info_Struct) info;
 	while true
 	{
 		if info_struct == of
 			return nested;
+
 		if info_struct.members.count == 0
 			break;
+
 		member := *info_struct.members[0];
 		if !flagged (member.flags, .USING)
 			break;
+
 		if member.type.type == .STRUCT
 		{
 			info_struct = cast (*Type_Info_Struct) member.type;
@@ -29,6 +33,7 @@ is_substruct_of :: (info : *Type_Info, of : *Type_Info_Struct, nested := false) 
 
 			return is_substruct_of (info_pointer.pointer_to, of, true);
 		}
+
 		break;
 	}
 
@@ -45,21 +50,25 @@ relative_to_absolute_ptr :: inline (ptr : *void, size : s64) -> *void #must
 		if !relative
 			return null;
 		offset = relative ^ 0x80;
+
 	case 2;
 		relative := <<cast (*s64) ptr;
 		if !relative
 			return null;
 		offset = relative ^ 0x8000;
+
 	case 4;
 		relative := <<cast (*s32) ptr;
 		if !relative
 			return null;
 		offset = relative ^ 0x80000000;
+
 	case 8;
 		relative := <<cast (*s64) ptr;
 		if !relative
 			return null;
 		offset = relative ^ 0x8000000000000000;
+
 	case;	// Invalid size!
 		return null;
 	}
@@ -84,12 +93,14 @@ any_to_u64 :: inline (any : Any) -> value : u64 #must, ok : bool
 		info = (cast (*Type_Info_Enum) info).internal_type;
 	if info.type == .VARIANT
 		info = cast (*Type_Info_Integer) (cast (*Type_Info_Variant) info).variant_of;
+
 	if info.type ==
 	{
 	case .BOOL;
 		value := <<cast (*bool) any.value_pointer;
 
 		return cast (u64) value, true;
+
 	case .INTEGER;
 		value : u64 = ---;
 		if info.runtime_size ==
@@ -99,22 +110,25 @@ any_to_u64 :: inline (any : Any) -> value : u64 #must, ok : bool
 				value = cast, no_check (u64) (<<cast (*s8) any.value_pointer);
 			else
 				value = cast, no_check (u64) (<<cast (*u8) any.value_pointer);
+
 		case 2;
 			if info.signed
 				value = cast, no_check (u64) (<<cast (*s16) any.value_pointer);
 			else
 				value = cast, no_check (u64) (<<cast (*u16) any.value_pointer);
+
 		case 4;
 			if info.signed
 				value = cast, no_check (u64) (<<cast (*s32) any.value_pointer);
 			else
 				value = cast, no_check (u64) (<<cast (*u32) any.value_pointer);
+
 		case 8;
 			if info.signed
 				value = cast, no_check (u64) (<<cast (*s64) any.value_pointer);
 			else
 				value = cast, no_check (u64) (<<cast (*u64) any.value_pointer);
-		case;	// Corrupted type info!
+		case;	// Corrupt type info!
 			return 0, false;
 		}
 
@@ -141,14 +155,17 @@ any_to_integer :: inline (any : Any) -> unsigned_value : u64 #must, negative : b
 		info = (cast (*Type_Info_Enum) info).internal_type;
 	if info.type == .VARIANT
 		info = cast (*Type_Info_Integer) (cast (*Type_Info_Variant) info).variant_of;
+
 	if info.type != .INTEGER
 		return 0, false, false;
+
 	value : u64 = ---;
 	negative : bool = ---;
 	if info.signed
 	{
 		signed_value, ok := any_to_s64 (any);
 		if !ok then return 0, false, false;
+
 		if signed_value < 0
 		{
 			value = cast (u64) -signed_value;
@@ -164,6 +181,7 @@ any_to_integer :: inline (any : Any) -> unsigned_value : u64 #must, negative : b
 	{
 		unsigned_value, ok := any_to_u64 (any);
 		if !ok then return 0, false, false;
+
 		value = unsigned_value;
 		negative = false;
 	}
@@ -188,6 +206,7 @@ any_to_s64 :: inline (any : Any) -> value : s64 #must, ok : bool
 		info = (cast (*Type_Info_Enum) info).internal_type;
 	if info.type == .VARIANT
 		info = cast (*Type_Info_Integer) (cast (*Type_Info_Variant) info).variant_of;
+
 	if info.type ==
 	{
 	case .BOOL;
@@ -203,21 +222,25 @@ any_to_s64 :: inline (any : Any) -> value : s64 #must, ok : bool
 				value = cast, no_check (s64) (<<cast (*s8) any.value_pointer);
 			else
 				value = cast, no_check (s64) (<<cast (*u8) any.value_pointer);
+
 		case 2;
 			if info.signed
 				value = cast, no_check (s64) (<<cast (*s16) any.value_pointer);
 			else
 				value = cast, no_check (s64) (<<cast (*u16) any.value_pointer);
+
 		case 4;
 			if info.signed
 				value = cast, no_check (s64) (<<cast (*s32) any.value_pointer);
 			else
 				value = cast, no_check (s64) (<<cast (*u32) any.value_pointer);
+
 		case 8;
 			if info.signed
 				value = cast, no_check (s64) (<<cast (*s64) any.value_pointer);
 			else
 				value = cast, no_check (s64) (<<cast (*u64) any.value_pointer);
+
 		case;	// Corrupted type info!
 			return 0, false;
 		}
@@ -242,19 +265,23 @@ any_to_f32 :: inline (any : Any) -> value : f32 #must, ok : bool
 	info := cast (*Type_Info_Float) any.type;
 	if info.type == .VARIANT
 		info = cast (*Type_Info_Float) (cast (*Type_Info_Variant) info).variant_of;
+
 	if info.type ==
 	{
 	case .BOOL; #through;
 	case .INTEGER;
 		return cast (f32) any_to_s64 (any), true;
+
 	case .FLOAT;
 		value : f32 = ---;
 		if info.runtime_size ==
 		{
 		case 4;
 			value = <<cast (*f32) any.value_pointer;
+
 		case 8;
 			value = cast (f32) (<<cast (*f64) any.value_pointer);
+
 		case;	// Corrupted type info!
 			return 0, false;
 		}
@@ -284,17 +311,21 @@ any_to_f64 :: inline (any : Any) -> value : f64 #must, ok : bool
 	case .BOOL; #through;
 	case .INTEGER;
 		return cast (f64) any_to_s64 (any), true;
+
 	case .FLOAT;
 		value : f64 = ---;
 		if info.runtime_size ==
 		{
 		case 4;
 			value = cast (f64) (<<cast (*f32) any.value_pointer);
+
 		case 8;
 			value = <<cast (*f64) any.value_pointer;
+
 		case;	// Corrupted type info!
 			return 0, false;
 		}
+
 		return value, true;
 	}
 
@@ -335,23 +366,29 @@ any_to_string :: inline (any : Any) -> value : string #must, ok : bool
 		info = cast (*Type_Info_String) (cast (*Type_Info_Variant) info).variant_of;
 	if info.type != .STRING
 		return "", false;
+
 	value : string = ---;
 	if info.relative_pointer_size ==
 	{
 	case 0;
 		value = <<cast (*string) any.value_pointer;
+
 	case 1;
 		value.count = cast (s64) (<<cast (*s8) any.value_pointer);
 		value.data  = relative_to_absolute_ptr (any.value_pointer + info.relative_pointer_size, info.relative_pointer_size);
+
 	case 2;
 		value.count = cast (s64) (<<cast (*s16) any.value_pointer);
 		value.data  = relative_to_absolute_ptr (any.value_pointer + info.relative_pointer_size, info.relative_pointer_size);
+
 	case 4;
 		value.count = cast (s64) (<<cast (*s32) any.value_pointer);
 		value.data  = relative_to_absolute_ptr (any.value_pointer + info.relative_pointer_size, info.relative_pointer_size);
+
 	case 8;
 		value.count = <<cast (*s64) any.value_pointer;
 		value.data  = relative_to_absolute_ptr (any.value_pointer + info.relative_pointer_size, info.relative_pointer_size);
+
 	case;	// Corrupted type info!
 		return "", false;
 	}
@@ -376,16 +413,19 @@ any_to_ptr :: inline (any : Any) -> value : *void #must, ok : bool
 		info = cast (*Type_Info_Pointer) (cast (*Type_Info_Variant) info).variant_of;
 	if info.type != .POINTER
 		return null, false;
+
 	value : *void = ---;
 	if info.relative_pointer_size ==
 	{
 	case 0;
 		value = <<cast (**void) any.value_pointer;
+
 	case 1; #through;
 	case 2; #through;
 	case 4; #through;
 	case 8;
 		value = relative_to_absolute_ptr (any.value_pointer, info.relative_pointer_size);
+
 	case;	// Corrupted type info!
 		return null, false;
 	}
@@ -410,20 +450,25 @@ any_get_array_count :: inline (any : Any) -> s64, ok : bool
 		info = cast (*Type_Info_Array) (cast (*Type_Info_Variant) info).variant_of;
 	if info.type != .ARRAY
 		return 0, false;
+
 	if #complete info.array_type ==
 	{
 	case .FIXED;
 		return info.array_count, true;
+
 	case .VIEW; #through;
 	case .RESIZABLE;
 		if info.relative_pointer_size ==
 		{
 		case 1;
 			return cast (s64) (<<cast (*s8) any.value_pointer), true;
+
 		case 2;
 			return cast (s64) (<<cast (*s16) any.value_pointer), true;
+
 		case 4;
 			return cast (s64) (<<cast (*s32) any.value_pointer), true;
+
 		case 8; #through;
 		case 0;
 			return <<cast (*s64) any.value_pointer, true;
@@ -450,16 +495,19 @@ any_get_array_data :: inline (any : Any) -> *void, ok : bool
 		info = cast (*Type_Info_Array) (cast (*Type_Info_Variant) info).variant_of;
 	if info.type != .ARRAY
 		return null, false;
+
 	if #complete info.array_type ==
 	{
 	case .FIXED;
 		return any.value_pointer, true;
+
 	case .VIEW; #through;
 	case .RESIZABLE;
 		if info.relative_pointer_size ==
 		{
 		case 0;
 			return <<cast (**void) (any.value_pointer + size_of (s64)), true;
+
 		case 1; #through;
 		case 2; #through;
 		case 4; #through;
