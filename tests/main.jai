@@ -10,7 +10,7 @@ total_tests : s64;
 test_print :: (expected : string, fmt_str : string, args : ..Any, location := #caller_location) -> ko : s64
 {
 	total_tests += 1;
-	str := fmt (context.allocator, fmt_str, ..args);
+	str := format (context.allocator, fmt_str, ..args);
 	if str != expected
 	{
 		println ("[Ln %]: Expected '%', got '%'.", location.line_number, expected, str);
@@ -28,7 +28,7 @@ test_print :: (expected : string, fmt_str : string, args : ..Any, location := #c
 		{
 			fmt_buff := make_fmt_buffer (buff);
 			start := Basic.get_time ();
-			len := fmt (*fmt_buff, fmt_str, ..args);
+			len := format (*fmt_buff, fmt_str, ..args);
 			end := Basic.get_time ();
 			total_time += (end - start) * 1000;
 		}
@@ -574,7 +574,7 @@ main :: ()
 	ko += test_struct ();
 	//Basic.print ("Test print:\n");
 	//len1 := print ("Hello Sailor!\n{:}\n{:10.3f}\n", MAT3F_IDENTITY, 1.234);
-	//str := fmt (context.allocator, "Hello Sailor!\n{:}\n{:10.3f}\n", MAT3F_IDENTITY, 1.234);
+	//str := format (context.allocator, "Hello Sailor!\n{:}\n{:10.3f}\n", MAT3F_IDENTITY, 1.234);
 	//if len1 != str.count
 	//	Basic.print ("print returned a length of %, but % was expected.\n", len1, str.count);
 	println (" %/% tests SUCCESSFUL,\n % FAILURES.", total_tests - ko, total_tests, ko);

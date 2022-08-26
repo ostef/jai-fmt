@@ -36,7 +36,7 @@ print :: inline (fmt_str : string, args : ..Any) -> length : s64
 {
 	printer : Printer;
 
-	return fmt (*printer, fmt_str, ..args);
+	return format (*printer, fmt_str, ..args);
 }
 
 println :: inline (fmt_str : string, args : ..Any) -> length : s64

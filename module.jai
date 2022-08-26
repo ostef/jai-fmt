@@ -538,7 +538,6 @@ write_arg :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64 #must
 	return i;
 }
 
-fmt :: format;
 format :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> length : s64
 #modify { reject_non_buffer_types (T); }
 {
