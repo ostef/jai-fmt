@@ -61,8 +61,10 @@ Valid precision values are positive or negative integer values, or a * character
 
 These are the main procedures:
 ```jai
-fmt :: format;
 format :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> length : s64
+```
+```jai
+format :: inline (fmt_str : string, args : ..Any) -> string #must
 ```
 ```jai
 format :: inline (allocator : Allocator, fmt_str : string, args : ..Any) -> string #must

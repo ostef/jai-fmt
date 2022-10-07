@@ -599,6 +599,11 @@ format :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> length : s64
 	return buffer_index;
 }
 
+format :: inline (fmt_str : string, args : ..Any) -> string #must
+{
+	return format (context.allocator, fmt_str, ..args);
+}
+
 format :: inline (allocator : Allocator, fmt_str : string, args : ..Any) -> string #must
 {
 	buffer : Fmt_Buffer;
@@ -612,6 +617,11 @@ format :: inline (allocator : Allocator, fmt_str : string, args : ..Any) -> stri
 	str.count = format (*buffer, fmt_str, ..args);
 
 	return str;
+}
+
+format_to_cstring :: inline (fmt_str : string, args : ..Any) -> *u8 #must
+{
+	return format_to_cstring (context.allocator, fmt_str, ..args);
 }
 
 format_to_cstring :: inline (allocator : Allocator, fmt_str : string, args : ..Any) -> *u8 #must
