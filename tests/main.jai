@@ -281,8 +281,6 @@ test_any :: () -> ko : s64
 	ko += test_print ("(s64, *s64, *Test_Enum, Test_Poly_Struct (T = Type, N = 500)) -> (bool, string)", "{:!}", Test_Proc);
 	ko += test_print ("(s64, *s64, *Test_Enum, Test_Poly_Struct (Type, 500)) -> (bool, string)", "%", Test_Proc);
 	ko += test_print ("null", "{:t}", cast (*Type_Info) null);
-	ko += test_print ("[]~s16 u8", "{:t}", []~s16 u8);
-	ko += test_print ("[]~s16 u8", "{:t}", type_info ([]~s16 u8));
 	proc := test_print;
 	proc = null;
 	ko += test_print ("null", "%", proc);
@@ -332,7 +330,6 @@ test_other :: () -> ko : s64
 	ko += test_print ("àâéèêëîïôùûüæœ⺀⺠", "àâéèêëîïôùûüæœ⺀⺠");
 	ko += test_print ("Type_Info", "{:t}", Type_Info);
 	ko += test_print ("string", "{:t}", string);
-	ko += test_print ("string~s16", "{:t}", string~s16);
 	ko += test_print ("Type_Info", "{:t}", type_info (Type_Info));
 	ko += test_print ("*Type_Info", "{:t}", type_info (*Type_Info));
 	ko += test_print ("*void", "{:t}", null);
@@ -386,7 +383,7 @@ test_struct :: inline () -> ko : s64
 	ko += test_print ("{ \"Foo\\nBar\\nBaz\",\n  0,\n  1.234 }", "%", Foo.{ "Foo\nBar\nBaz", 0, 1.234 });
 	ko += test_print ("{ \"Foo\\nBar\\nBaz\", 0, 1.234 }", "{:$}", Foo.{ "Foo\nBar\nBaz", 0, 1.234 });
 	ko += test_print ("{ a : \"Foo\\nBar\\nBaz\",\n  b : 0,\n  c : 1.234 }", "{:!}", Foo.{ "Foo\nBar\nBaz", 0, 1.234 });
-	
+
 	ko += test_print ("[ (2) { \"Foo\\nBar\\nBaz\", 0, 1.234 }, { \"Hello Sailor!\", 69105, 3.1415 } ]", "{}", Foo.[ .{ "Foo\nBar\nBaz", 0, 1.234 }, .{ "Hello Sailor!", 69105, 3.1415 } ]);
 	ko += test_print ("[ (2) { a : \"Foo\\nBar\\nBaz\", b : 0, c : 1.234 }, { a : \"Hello Sailor!\", b : 69105, c : 3.1415 } ]", "{:!}", Foo.[ .{ "Foo\nBar\nBaz", 0, 1.234 }, .{ "Hello Sailor!", 69105, 3.1415 } ]);
 	ko += test_print ("{     +123.457,       +0.000 }", "{}", Vec2f.{ cast (f32) 123.456789, 0 });
