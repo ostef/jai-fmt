@@ -185,7 +185,7 @@ any_to_integer :: inline (any : Any) -> unsigned_value : u64 #must, negative : b
 		value = unsigned_value;
 		negative = false;
 	}
-	
+
 	return value, negative, true;
 }
 
@@ -367,33 +367,7 @@ any_to_string :: inline (any : Any) -> value : string #must, ok : bool
 	if info.type != .STRING
 		return "", false;
 
-	value : string = ---;
-	if info.relative_pointer_size ==
-	{
-	case 0;
-		value = <<cast (*string) any.value_pointer;
-
-	case 1;
-		value.count = cast (s64) (<<cast (*s8) any.value_pointer);
-		value.data  = relative_to_absolute_ptr (any.value_pointer + info.relative_pointer_size, info.relative_pointer_size);
-
-	case 2;
-		value.count = cast (s64) (<<cast (*s16) any.value_pointer);
-		value.data  = relative_to_absolute_ptr (any.value_pointer + info.relative_pointer_size, info.relative_pointer_size);
-
-	case 4;
-		value.count = cast (s64) (<<cast (*s32) any.value_pointer);
-		value.data  = relative_to_absolute_ptr (any.value_pointer + info.relative_pointer_size, info.relative_pointer_size);
-
-	case 8;
-		value.count = <<cast (*s64) any.value_pointer;
-		value.data  = relative_to_absolute_ptr (any.value_pointer + info.relative_pointer_size, info.relative_pointer_size);
-
-	case;	// Corrupted type info!
-		return "", false;
-	}
-
-	return value, true;
+	return <<cast (*string) any.value_pointer, true;
 }
 
 any_to_ptr :: inline (ptr : *void, info : *Type_Info) -> value : *void #must, ok : bool
@@ -414,23 +388,7 @@ any_to_ptr :: inline (any : Any) -> value : *void #must, ok : bool
 	if info.type != .POINTER
 		return null, false;
 
-	value : *void = ---;
-	if info.relative_pointer_size ==
-	{
-	case 0;
-		value = <<cast (**void) any.value_pointer;
-
-	case 1; #through;
-	case 2; #through;
-	case 4; #through;
-	case 8;
-		value = relative_to_absolute_ptr (any.value_pointer, info.relative_pointer_size);
-
-	case;	// Corrupted type info!
-		return null, false;
-	}
-
-	return value, true;
+	return <<cast (**void) any.value_pointer, true;
 }
 
 any_get_array_count :: inline (ptr : *void, info : *Type_Info) -> s64, ok : bool
@@ -458,21 +416,7 @@ any_get_array_count :: inline (any : Any) -> s64, ok : bool
 
 	case .VIEW; #through;
 	case .RESIZABLE;
-		if info.relative_pointer_size ==
-		{
-		case 1;
-			return cast (s64) (<<cast (*s8) any.value_pointer), true;
-
-		case 2;
-			return cast (s64) (<<cast (*s16) any.value_pointer), true;
-
-		case 4;
-			return cast (s64) (<<cast (*s32) any.value_pointer), true;
-
-		case 8; #through;
-		case 0;
-			return <<cast (*s64) any.value_pointer, true;
-		}
+		return <<cast (*s64) any.value_pointer, true;
 	}
 
 	return 0, false;
@@ -503,17 +447,7 @@ any_get_array_data :: inline (any : Any) -> *void, ok : bool
 
 	case .VIEW; #through;
 	case .RESIZABLE;
-		if info.relative_pointer_size ==
-		{
-		case 0;
-			return <<cast (**void) (any.value_pointer + size_of (s64)), true;
-
-		case 1; #through;
-		case 2; #through;
-		case 4; #through;
-		case 8;
-			return relative_to_absolute_ptr (any.value_pointer + info.relative_pointer_size, info.relative_pointer_size), true;
-		}
+		return <<cast (**void) (any.value_pointer + size_of (s64)), true;
 	}
 
 	return null, false;

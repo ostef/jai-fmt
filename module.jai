@@ -96,7 +96,7 @@ is_buffer_type :: inline (type : Type) -> bool #must
 				return false;
 
 			info_arg0 := cast (*Type_Info_Pointer) info_proc.argument_types[0];
-			if info_arg0.relative_pointer_size != 0 || info_arg0.pointer_to != info
+			if info_arg0.pointer_to != info
 				return false;
 
 			if info_proc.argument_types[1] != type_info (u8)
@@ -555,7 +555,7 @@ format :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> length : s64
 				fmt_skip := 0;
 				arg_skip := 0;
 				unclosed := false;
-			
+
 				if fmt_str[fmt_index - 1] == #char "{"
 				{
 					fmt_skip, arg_skip = read_arg (*arg, advance (fmt_str, fmt_index), arg_index, ..args);
@@ -567,10 +567,10 @@ format :: inline (buffer : *$T, fmt_str : string, args : ..Any) -> length : s64
 					arg.arg_index = arg_index;
 					arg_skip = 1;
 				}
-			
+
 				fmt_index += fmt_skip;
 				arg_index += arg_skip;
-			
+
 				if unclosed
 					buffer_index += write_string (buffer, "(unclosed format)");
 				else if !arg.write_func
@@ -636,6 +636,6 @@ format_to_cstring :: inline (allocator : Allocator, fmt_str : string, args : ..A
 	str.data = buffer.data;
 	str.count = format (*buffer, fmt_str, ..args);
 	str.data[str.count] = 0;
-	
+
 	return str.data;
 }

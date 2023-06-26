@@ -132,7 +132,7 @@ write_any :: (buffer : *$T, arg : Fmt_Arg (T), is_nested : bool) -> length : s64
 
 	case .TYPE;
 		return index + write_type (buffer, <<cast (**Type_Info) any.value_pointer, flagged (arg.flags, .PRINT_MEMBER_NAMES));
-	
+
 	case .ANY;
 		new_any := <<cast (*Any) any.value_pointer;
 
@@ -169,11 +169,7 @@ follow_pointer :: inline (ptr : *void, info : *Type_Info) -> *void, *Type_Info
 		return ptr, info;
 
 	info_ptr := cast (*Type_Info_Pointer) info;
-	new_ptr : *void;
-	if info_ptr.relative_pointer_size
-		new_ptr = relative_to_absolute_ptr (ptr, info_ptr.relative_pointer_size);
-	else
-		new_ptr = <<cast (**void) ptr;
+	new_ptr := <<cast (**void) ptr;
 
 	if new_ptr
 		return new_ptr, info_ptr.pointer_to;
@@ -328,7 +324,7 @@ write_tagged_union :: (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 
 	newline := false;
 	it := info_struct.members[arg.union_tag];
-	
+
 	unclosed_format   := false;
 	found_fmt_note    := false;
 	found_follow_note := false;

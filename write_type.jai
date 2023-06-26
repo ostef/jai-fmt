@@ -1,24 +1,3 @@
-write_relative_pointer_size :: inline (buffer : *$T, size : s64) -> length : s64
-#modify { reject_non_buffer_types (T); }
-{
-	if size ==
-	{
-	case 1;
-		return write_string (buffer, "~s8");
-
-	case 2;
-		return write_string (buffer, "~s16");
-
-	case 4;
-		return write_string (buffer, "~s32");
-
-	case 8;
-		return write_string (buffer, "~s64");
-	}
-
-	return 0;
-}
-
 write_type :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 #modify { reject_non_buffer_types (T); }
 {
@@ -42,11 +21,7 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 		return write_string (buffer, "void");
 
 	case .STRING;
-		info_str := cast (*Type_Info_String) info;
-		i := write_string (buffer, "string");
-		i += write_relative_pointer_size (buffer, info_str.relative_pointer_size);
-
-		return i;
+		return write_string (buffer, "string");
 
 	case .BOOL;
 		return write_string (buffer, "bool");
@@ -94,11 +69,6 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 		info_pointer := cast (*Type_Info_Pointer) info;
 
 		i := write_string (buffer, "*");
-		if info_pointer.relative_pointer_size
-		{
-			i += write_relative_pointer_size (buffer, info_pointer.relative_pointer_size);
-			i += write_string (buffer, " ");
-		}
 
 		return i + write_type (buffer, info_pointer.pointer_to, print_member_names);
 
@@ -135,7 +105,7 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 					if print_member_names
 						index += write_string (buffer, " = ");
 
-					ptr := info_struct.constant_storage_buffer + param.offset_into_constant_storage;
+					ptr := info_struct.constant_storage.data + param.offset_into_constant_storage;
 					index += write_any (buffer, ptr, param.type, true);
 				}
 			}
@@ -160,11 +130,6 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 
 		case .VIEW;
 			index += write_string (buffer, "[]");
-			if info_array.relative_pointer_size
-			{
-				index += write_relative_pointer_size (buffer, info_array.relative_pointer_size);
-				index += write_string (buffer, " ");
-			}
 
 		case .RESIZABLE;
 			index += write_string (buffer, "[..]");
@@ -228,7 +193,7 @@ write_type :: (buffer : *$T, info : *Type_Info, print_member_names := false) -> 
 
 	case .ANY;
 		return write_string (buffer, "Any");
-	
+
 	case .OVERLOAD_SET; #through;
 	case .POLYMORPHIC_VARIABLE;
 		return write_string (buffer, "(unhandled type)");
