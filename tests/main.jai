@@ -1,6 +1,5 @@
 Basic :: #import "Basic";
 #import "Fmt";
-#import "stb_sprintf";
 
 PROFILE_COUNT :: 10000;
 
@@ -42,11 +41,10 @@ test_string :: () -> ko : s64
 {
 	println ("Test :s");
 	ko := 0;
-	ko += test_print ("null", "{:s}", "");
-	ko += test_print ("      null", "{:10s}", "");
-	ko += test_print ("null", "{:010s}", "");
-	ko += test_print ("      null", "{:10s}", "");
-	ko += test_print ("nul", "{:.3s}", "");
+	ko += test_print ("", "{:s}", "");
+	ko += test_print ("          ", "{:10s}", "");
+	ko += test_print ("", "{:010s}", "");
+	ko += test_print ("", "{:.3s}", "");
 	ko += test_print ("Hello\\nSailor", "{:\\s}", "Hello\nSailor");
 	ko += test_print ("Hello", "{:\\.5s}", "Hello\nSailor");
 	ko += test_print ("   Hello Sailor", "{:15s}", "Hello Sailor");

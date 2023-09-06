@@ -93,8 +93,6 @@ write_string :: inline (buffer : *$T, arg : Fmt_Arg (T)) -> length : s64
 #modify { reject_non_buffer_types (T); }
 {
 	str := any_to_string (arg.value);
-	if !str.data && !flagged (arg.flags, .QUOTED)
-		return write_string (buffer, "null", arg.precision);
 
 	index := 0;
 	if flagged (arg.flags, .QUOTED)
