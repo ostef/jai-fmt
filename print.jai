@@ -6,6 +6,7 @@ Printer :: struct
 {
 	buffer : [PRINTER_BUFFER_SIZE]u8;
 	count  : s64;
+	to_stderr : bool;
 
 	write_byte :: inline (using printer : *Printer, byte : u8)
 	{
@@ -17,7 +18,7 @@ Printer :: struct
 				str : string = ---;
 				str.data  = buffer.data;
 				str.count = count;
-				write_string (str);
+				write_string (str, to_standard_error = to_stderr);
 				count = 0;
 			}
 
@@ -32,27 +33,28 @@ Printer :: struct
 
 #scope_export
 
-print :: inline (fmt_str : string, args : ..Any) -> length : s64
+print :: inline (fmt_str : string, args : ..Any, to_stderr := false) -> length : s64
 {
 	printer : Printer;
+	printer.to_stderr = to_stderr;
 
 	return format (*printer, fmt_str, ..args);
 }
 
-println :: inline (fmt_str : string, args : ..Any) -> length : s64
+println :: inline (fmt_str : string, args : ..Any, to_stderr := false) -> length : s64
 {
-	result := print (fmt_str, ..args);
-	result += print ("\n");
+	result := print (fmt_str, ..args, to_stderr = to_stderr);
+	result += print ("\n", to_stderr = to_stderr);
 
 	return result;
 }
 
-print :: inline (val : Any) -> length : s64
+print :: inline (val : Any, to_stderr := false) -> length : s64
 {
-	return print ("%", val);
+	return print ("%", val, to_stderr = to_stderr);
 }
 
-println :: inline (val : Any) -> length : s64
+println :: inline (val : Any, to_stderr := false) -> length : s64
 {
-	return println ("%", val);
+	return println ("%", val, to_stderr = to_stderr);
 }
